@@ -8,6 +8,8 @@ Backend API for Obra360 - Construction Project Management Platform
 - Node.js 18+ and npm
 - PostgreSQL 12+
 - Git
+- TypeScript
+
 
 ### Automatic Setup
 
@@ -21,6 +23,8 @@ chmod +x scripts/setup-dev.sh
 
 # Run the script
 ./scripts/setup-dev.sh
+
+
 
 # Clone the repository
 git clone https://github.com/your-org/backend-obra360.git
