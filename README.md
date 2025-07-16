@@ -1,55 +1,30 @@
-# Backend Obra360
+# Obra360 Backend
 
-Backend para la plataforma SaaS Obra360, encargado de la lógica de negocio, API REST y gestión de datos.
+Backend API for Obra360 - Construction Project Management Platform
 
-## Tecnologías
+## 🚀 Quick Start (WSL/Linux)
 
-- Node.js
-- Express.js
-- PostgreSQL (pendiente de configuración)
-- ESLint y Prettier para estándar de código
+### Prerequisites
+- Node.js 18+ and npm
+- PostgreSQL 12+
+- Git
 
-## Estructura del proyecto
-/src
-/controllers # Controladores de la API
-/models # Modelos de base de datos
-/routes # Rutas y endpoints
-/middlewares # Middlewares personalizados
-/config # Archivos de configuración
-/tests # Pruebas unitarias e integrales
-/scripts # Scripts de utilidades
-README.md
-.gitignore
-package.json
-.eslintrc.json
-.prettierrc
+### Automatic Setup
 
+We provide a setup script that handles everything automatically:
 
-## Instalación
+# First, make sure you're in the project directory
+cd backend-obra360
 
-1. Clonar el repositorio  
-git clone git@github.com:Obra360/backend-obra360.git
+# Make the script executable (only needed once)
+chmod +x scripts/setup-dev.sh
 
+# Run the script
+./scripts/setup-dev.sh
 
-2. Instalar dependencias  
-npm install
+# Clone the repository
+git clone https://github.com/your-org/backend-obra360.git
+cd backend-obra360
 
-
-3. Configurar variables de entorno  
-Crear archivo `.env` con las variables necesarias (ejemplo en `.env.example`)
-
-4. Ejecutar en modo desarrollo  
-npm run dev
-
-
-## Uso
-
-Desarrollar la API REST y endpoints según las rutas definidas. Puedes correr pruebas con:
-npm test
-
-
-## Contribución
-
-- Usar ramas `feature/nombre-funcionalidad` desde `develop`.
-- Crear Pull Requests para revisión.
-- Mantener el estándar de código con ESLint y Prettier.
+# Run the setup script
+./scripts/setup-dev.sh
