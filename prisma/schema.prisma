@@ -98,6 +98,5 @@ model Certificacion {
   Cantidad          Int
   Descripcion       String?
   Auto_fecha        DateTime  @default(now()) @map("Auto_fecha")
-
-  @@map("Certificaciones")
+  
 }
