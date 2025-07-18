@@ -24,12 +24,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   obras Obra[]
-  RefreshToken RefreshToken[]
+  tokens RefreshToken[]
 
   // Relations (to be added later)
   // projects Project[]
   // tasks    Task[]
-  RefreshToken RefreshToken[]
+  
 }
 
 model RefreshToken {
