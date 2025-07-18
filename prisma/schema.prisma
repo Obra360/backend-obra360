@@ -96,3 +96,17 @@ model Movimientos {
 
   @@index([ID_producto])
 }
+
+model Certificacion {
+  Codigo            Int       @id @default(autoincrement())
+  Tipo_certificaion String
+  Fecha             DateTime
+  Precio            Float
+  Estado            String
+  Obra              Int
+  Cantidad          Int
+  Descripcion       String?
+  Auto_fecha        DateTime  @default(now()) @map("Auto_fecha")
+
+  @@map("Certificaciones")
+}
