@@ -23,11 +23,13 @@ model User {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  obras Obra[]
+  tokens RefreshToken[]
 
   // Relations (to be added later)
   // projects Project[]
   // tasks    Task[]
-  RefreshToken RefreshToken[]
+  
 }
 
 model RefreshToken {
@@ -38,6 +40,28 @@ model RefreshToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
+
+model Obra {
+  id         String   @id @default(uuid())
+  empresa    String
+  tipo       String
+  ciudad     String
+  createdAt  DateTime @default(now())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+
+model Obra {
+  id         String   @id @default(uuid())
+  empresa    String
+  tipo       String
+  ciudad     String
+  createdAt  DateTime @default(now())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+}
+
 
 enum TipoMovimiento {
   ingreso
