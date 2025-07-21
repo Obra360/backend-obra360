@@ -1,4 +1,5 @@
 import express from "express";
+import obrasRouter from '/home/toby/Obra360/backend-obra360/src/routes/obras.js';
 import path from "path";
 import cors from "cors";
 import pkg from '@prisma/client';
@@ -10,6 +11,7 @@ const PORT = 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use('/api/obras', obrasRouter);
 const prisma = new PrismaClient();
 
 //  Necesario para que __dirname funcione con ES Modules
