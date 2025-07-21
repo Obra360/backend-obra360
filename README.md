@@ -53,3 +53,86 @@ cd backend-obra360
 
 # Run the setup script
 ./scripts/setup-dev.sh
+
+
+#Triggers{
+actualizar stock
+CREATE OR REPLACE FUNCTION actualizar_stock_articulo()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.tipo_movimiento = 'ingreso' THEN
+    UPDATE "Articulos"
+    SET stock = stock + NEW.cantidad
+    WHERE id = NEW.id_producto;
+
+  ELSIF NEW.tipo_movimiento = 'venta' THEN
+    UPDATE "Articulos"
+    SET stock = stock - NEW.cantidad
+    WHERE id = NEW.id_producto;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+auto fecha
+CREATE OR REPLACE FUNCTION actualizar_auto_fecha()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW."auto_fecha" := NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+calcular precio total
+CREATE OR REPLACE FUNCTION calcular_precio_total()
+RETURNS TRIGGER AS $$
+DECLARE
+  precio_unitario REAL;
+BEGIN
+  SELECT precio INTO precio_unitario
+  FROM "Articulos"
+  WHERE id = NEW.id_producto;
+
+  NEW.precio_total := precio_unitario * NEW.cantidad;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+validar stock
+CREATE OR REPLACE FUNCTION validar_stock_suficiente()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.tipo_movimiento = 'venta' THEN
+    PERFORM 1 FROM "Articulos"
+    WHERE id = NEW.id_producto AND stock >= NEW.cantidad;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Stock insuficiente para el producto %', NEW.id_producto;
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+function:
+actualizar fecha
+CREATE TRIGGER trigger_auto_fecha
+BEFORE INSERT OR UPDATE ON "Certificacion"
+FOR EACH ROW
+EXECUTE FUNCTION actualizar_auto_fecha();
+actualizar stock
+CREATE TRIGGER trigger_actualizar_stock
+AFTER INSERT ON "Movimientos"
+FOR EACH ROW
+EXECUTE FUNCTION actualizar_stock_articulo();
+actualizar precio
+CREATE TRIGGER trigger_calcular_precio_total
+BEFORE INSERT OR UPDATE ON "Movimientos"
+FOR EACH ROW
+EXECUTE FUNCTION calcular_precio_total();
+validar stock suficiente
+CREATE TRIGGER trigger_validar_stock
+BEFORE INSERT OR UPDATE ON "Movimientos"
+FOR EACH ROW
+EXECUTE FUNCTION validar_stock_suficiente();
+} #En caso de actualizar la base de datos
