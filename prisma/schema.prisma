@@ -51,3 +51,53 @@ model Obra {
   user      User     @relation(fields: [userId], references: [id])
 }
 
+
+
+
+enum TipoMovimiento {
+  ingreso
+  venta
+}
+
+model Articulos {
+  ID_Producto              Int           @id @default(autoincrement())
+  Producto                 String
+  Cantidad                 Int
+  Precio                   Decimal       @db.Decimal(10, 2)
+  Precio_total_disponible  Decimal       @db.Decimal(10, 2)
+
+  movimientos              Movimientos[]
+}
+
+model Movimientos {
+  ID_transaccion           Int           @id @default(autoincrement())
+  ID_producto              Int
+  Producto                 String
+  Cantidad                 Int
+  Tipo_movimiento          TipoMovimiento
+  Fecha_transaccion        DateTime      @default(now())
+  Obra_destino             String?
+  Remito                   String?
+  Observacion              String?
+  Precio                   Decimal       @db.Decimal(10, 2)
+  Tipo_unidad              String
+  Precio_total_disponible  Decimal       @db.Decimal(10, 2)
+
+  articulo                 Articulos     @relation(fields: [ID_producto], references: [ID_Producto])
+
+  @@index([ID_producto])
+}
+
+model Certificacion {
+  Codigo            Int       @id @default(autoincrement())
+  Tipo_certificaion String
+  Fecha             DateTime
+  Precio            Float
+  Estado            String
+  Obra              Int
+  Cantidad          Int
+  Descripcion       String?
+  Auto_fecha        DateTime  @default(now()) @map("Auto_fecha")
+
+  @@map("Certificaciones")
+}
