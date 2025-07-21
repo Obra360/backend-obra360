@@ -51,9 +51,6 @@ model Obra {
   user      User     @relation(fields: [userId], references: [id])
 }
 
-
-
-
 enum TipoMovimiento {
   ingreso
   venta
