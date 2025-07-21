@@ -49,6 +49,8 @@ model Articulos {
   ObraID      String        @db.Uuid
   Obra        Obra          @relation(fields: [ObraID], references: [id])
   movimientos Movimientos[]
+  precio       Float   @default(0)
+  precio_final Float?  @default(0)
 }
 
 model Movimientos {
