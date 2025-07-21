@@ -37,15 +37,14 @@ model Obra {
   ciudad    String
   createdAt DateTime @default(now())
   userid    String   @db.Uuid
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userid], references: [id])
 }
 
 model Articulos {
   ID_Producto             Int           @id @default(autoincrement())
-  Producto                String
+  Nombre                String
+  Unidad                String
   Cantidad                Int
-  Precio                  Decimal       @db.Decimal(10, 2)
-  Precio_total_disponible Decimal       @db.Decimal(10, 2)
   movimientos             Movimientos[]
 }
 
