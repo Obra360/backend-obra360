@@ -44,6 +44,7 @@ model Obra {
 
 model Articulos {
   ID_Producto  Int           @id @default(autoincrement())
+  CodigoInterno  String   @unique
   Nombre       String
   Unidad       String
   Cantidad     Int
