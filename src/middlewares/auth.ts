@@ -1,38 +1,36 @@
-import { User } from "@prisma/client";
+import jwt from "jsonwebtoken";
+import { prisma } from "../lib/prisma.js";
 import { NextFunction, Request, Response } from "express";
-import { verify } from "jsonwebtoken";
-import { prisma } from "../lib/prisma.js";;
 
-export interface ExpressRequest extends Request {
-  user?: User;
+interface JwtPayload {
+  email: string;
 }
 
 export const authenticate = async (
-  req: ExpressRequest,
+  req: Request,
   res: Response,
-  next: NextFunction,
-): Promise<void | Response> => {
-  if (!req.headers.authorization) {
+  next: NextFunction
+): Promise<any> => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const token = req.headers.authorization.split(" ")[1];
-  if (!token) {
-    return res.status(401).json({ error: "Token not found" });
-  }
+  const token = authHeader.split(" ")[1];
 
   try {
-    const decode = verify(token, process.env.JWT_SECRET as string) as { email: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "JWT_SECRET") as JwtPayload;
 
     const user = await prisma.user.findUnique({
-      where: { email: decode.email },
+      where: { email: decoded.email }
     });
 
-    req.user = user ?? undefined;
+    // Asegurás tipado si extendés el Request (opcional)
+    (req as any).user = user ?? undefined;
     next();
   } catch (err) {
-    console.error("Error en auth middleware:", err);
-    req.user = undefined;
+    (req as any).user = undefined;
     next();
   }
 };
