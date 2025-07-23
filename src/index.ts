@@ -2,14 +2,17 @@ import express from "express";
 import obrasRouter from "./routes/obras.js";
 import path from "path";
 import cors from "cors";
-import { PrismaClient, User } from '@prisma/client';
+import { db } from './db.js';
+import { users } from './schema.js';
 import { fileURLToPath } from "url";
 import pkg from "jsonwebtoken";
 const { sign } = pkg;
 import { compare, hash } from "bcryptjs";
-import { authenticate} from "./middlewares/auth.js";
+import { authenticate } from "./middlewares/auth.js";
+import { eq } from 'drizzle-orm';
 
-const prisma = new PrismaClient();
+type User = typeof users.$inferSelect;
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -41,30 +44,40 @@ app.get("/*.html", (req, res) => {
 app.post("/users", async (req, res) => {
   try {
     const hashedPassword = await hash(req.body.password, 10);
-    const user = await prisma.user.create({
-      data: { ...req.body, password: hashedPassword }
-    });
+
+    const result = await db.insert(users).values({
+      ...req.body,
+      password: hashedPassword
+    }).returning();
+
+    const user = result[0];
     const { password: _, ...userWithoutPassword } = user;
     res.json({ ...userWithoutPassword, token: generateJwt(user) });
-  } catch {
-    res.status(400).json({ error: "Email or username is not unique" });
+
+  } catch (err) {
+    console.error("Error en registro:", err);
+    res.status(400).json({ error: "Email o usuario ya en uso" });
   }
 });
 
 // Login
 app.post("/users/login", async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { email: req.body.email }
+    const result = await db.query.users.findFirst({
+      where: (u, { eq }) => eq(u.email, req.body.email),
     });
-    if (!user) throw new Error("User not found");
-    const isPasswordCorrect = await compare(req.body.password, user.password);
+
+    if (!result) throw new Error("User not found");
+
+    const isPasswordCorrect = await compare(req.body.password, result.password);
     if (!isPasswordCorrect) throw new Error("Incorrect password");
 
-    const { password: _, ...userWithoutPassword } = user;
-    res.json({ ...userWithoutPassword, token: generateJwt(user) });
-  } catch {
-    res.status(401).json({ error: "Email or password are wrong" });
+    const { password: _, ...userWithoutPassword } = result;
+    res.json({ ...userWithoutPassword, token: generateJwt(result) });
+
+  } catch (err) {
+    console.error("Error en login:", err);
+    res.status(401).json({ error: "Email o contraseña incorrectos" });
   }
 });
 
@@ -91,4 +104,3 @@ function generateJwt(user: User): string {
 }
 
 console.log("📦 index.ts compilado correctamente");
-

@@ -95,3 +95,4 @@ enum TipoMovimiento {
   ingreso
   venta
 }
+
