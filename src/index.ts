@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 import pkg from "jsonwebtoken";
 const { sign } = pkg;
 import { compare, hash } from "bcryptjs";
-import { authenticate, ExpressRequest } from "./middlewares/auth.js";
+import { authenticate} from "./middlewares/auth.js";
 
 const prisma = new PrismaClient();
 const app = express();
@@ -69,11 +69,12 @@ app.post("/users/login", async (req, res) => {
 });
 
 // Autenticación protegida
-app.get("/user", authenticate, async (req: ExpressRequest, res, next) => {
+app.get("/user", authenticate, async (req, res, next) => {
   try {
-    if (!req.user) return res.sendStatus(401);
-    const { password: _, ...userWithoutPassword } = req.user;
-    res.json({ ...userWithoutPassword, token: generateJwt(req.user) });
+    const user = (req as any).user;
+    if (!user) return res.sendStatus(401);
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({ ...userWithoutPassword, token: generateJwt(user) });
   } catch (err) {
     next(err);
   }
@@ -88,4 +89,6 @@ function generateJwt(user: User): string {
     expiresIn: "1d"
   });
 }
+
 console.log("📦 index.ts compilado correctamente");
+
