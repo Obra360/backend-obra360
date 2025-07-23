@@ -1,16 +1,14 @@
 import express from "express";
 import path from "path";
 import cors from "cors";
-import pkg, { User } from '@prisma/client';
+import { PrismaClient, User } from '@prisma/client';
 import { fileURLToPath } from "url";
-import { hash } from "crypto";
 import { sign } from "jsonwebtoken";
-import { compare } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 import { authenticate, ExpressRequest } from "./middlewares/auth.js";
 //  corregido referencia local de router en obras
 import router from "./routes/obras.js";
 
-const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 const app = express();
 const PORT = 3000;
