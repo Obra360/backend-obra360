@@ -1,7 +1,7 @@
 import { User } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import { verify } from "jsonwebtoken";
-import { prisma } from "../lib/prisma";
+import { prisma } from "../lib/prisma.js";;
 
 export interface ExpressRequest extends Request {
   user?: User;
