@@ -1,4 +1,8 @@
 import express from "express";
+<<<<<<< HEAD
+=======
+import obrasRouter from "./routes/obras.js";
+>>>>>>> 5836c42 (Se modifica package.json e index.ts para deploy en render.)
 import path from "path";
 import cors from "cors";
 import { PrismaClient, User } from '@prisma/client';
@@ -11,10 +15,20 @@ import router from "./routes/obras.js";
 
 const prisma = new PrismaClient();
 const app = express();
+<<<<<<< HEAD
 const PORT = 3000;
 const generateJwt = (user: User): string  => {
   return sign({email: user.email}, 'JWT_SECRET')
 }
+=======
+const PORT = process.env.PORT || 3000; //  importante para Render
+
+app.use(cors());
+app.use(express.json());
+app.use('/api/obras', obrasRouter);
+const prisma = new PrismaClient();
+
+>>>>>>> 5836c42 (Se modifica package.json e index.ts para deploy en render.)
 //  Necesario para que __dirname funcione con ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -8,8 +8,14 @@
     "test": "tests"
   },
   "scripts": {
+<<<<<<< HEAD
      "start": "node dist/index.js",
      "dev": "tsx watch src/index.ts",
+=======
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "nodemon --watch src --ext ts --exec \"node --loader ts-node/esm --no-warnings\" src/index.ts",
+>>>>>>> 5836c42 (Se modifica package.json e index.ts para deploy en render.)
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
