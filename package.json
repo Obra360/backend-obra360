@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Backend and API for Obra360",
-  "main": "index.js",
+  "main": "dist/index.js",
   "directories": {
     "test": "tests"
   },
