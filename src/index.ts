@@ -88,3 +88,4 @@ function generateJwt(user: User): string {
     expiresIn: "1d"
   });
 }
+console.log("📦 index.ts compilado correctamente");
