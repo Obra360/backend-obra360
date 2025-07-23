@@ -4,7 +4,8 @@ import path from "path";
 import cors from "cors";
 import { PrismaClient, User } from '@prisma/client';
 import { fileURLToPath } from "url";
-import { sign } from "jsonwebtoken";
+import pkg from "jsonwebtoken";
+const { sign } = pkg;
 import { compare, hash } from "bcryptjs";
 import { authenticate, ExpressRequest } from "./middlewares/auth.js";
 
