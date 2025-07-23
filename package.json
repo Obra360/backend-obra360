@@ -3,24 +3,26 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Backend and API for Obra360",
-  "main": "index.js",
+  "main": "dist/index.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "start": "node src/index.js",
+    "build": "tsc",
+    "prestart": "echo skipping prestart",
+    "start": "prisma generate && node dist/index.js",
     "dev": "nodemon --watch src --ext ts --exec \"node --loader ts-node/esm --no-warnings\" src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "prepare": "husky",
     "setup:dev": "node scripts/setup-dev.js",
     "migrate:dev": "prisma migrate dev",
     "migrate:prod": "dotenv -e .env.production -- prisma migrate deploy",
     "studio": "prisma studio",
     "studio:prod": "dotenv -e .env.production -- prisma studio",
     "db:pull:prod": "dotenv -e .env.production -- prisma db pull"
+    
   },
   "keywords": [],
   "author": "",
@@ -51,6 +53,7 @@
     "prettier": "^3.6.2",
     "prisma": "^6.12.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   }
 }

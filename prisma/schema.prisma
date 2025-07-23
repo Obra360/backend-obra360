@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -37,20 +38,21 @@ model Obra {
   ciudad    String
   createdAt DateTime    @default(now())
   userid    String      @db.Uuid
-  user      User        @relation(fields: [userid], references: [id])
   articulos Articulos[]
+  user      User        @relation(fields: [userid], references: [id])
 }
 
 model Articulos {
-  ID_Producto Int           @id @default(autoincrement())
-  Nombre      String
-  Unidad      String
-  Cantidad    Int
-  ObraID      String        @db.Uuid
-  Obra        Obra          @relation(fields: [ObraID], references: [id])
-  movimientos Movimientos[]
-  precio       Float   @default(0)
-  precio_final Float?  @default(0)
+  ID_Producto  Int           @id @default(autoincrement())
+  CodigoInterno  String   @unique
+  Nombre       String
+  Unidad       String
+  Cantidad     Int
+  ObraID       String        @db.Uuid
+  precio       Float         @default(0)
+  precio_final Float?        @default(0)
+  Obra         Obra          @relation(fields: [ObraID], references: [id])
+  movimientos  Movimientos[]
 }
 
 model Movimientos {
