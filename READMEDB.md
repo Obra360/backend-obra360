@@ -1,0 +1,1 @@
+# 24/07/25, se agrego tabla "Salarios" al supabase, con sql.
