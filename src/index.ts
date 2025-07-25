@@ -1,5 +1,7 @@
 import express from "express";
-import obrasRouter from "./routes/obras.js";
+import dotenv from "dotenv";
+dotenv.config(); // Cargar variables de entorno desde .env
+import obrasRouter from "./routes/obras";
 import path from "path";
 import cors from "cors";
 import { PrismaClient, User } from '@prisma/client';
@@ -7,7 +9,8 @@ import { fileURLToPath } from "url";
 import pkg from "jsonwebtoken";
 const { sign } = pkg;
 import { compare, hash } from "bcryptjs";
-import { authenticate} from "./middlewares/auth.js";
+import { authenticate } from "./middlewares/auth";
+console.log("🟢 authenticate cargado");
 import authRouter from "./routes/auth.routes.js"; //Se usa auth.routes.ts que se hizo para la conexion entre front/BACKend
 
 
@@ -17,14 +20,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use("/auth", authRouter);
-//registra un mal inicio en el servidor
-try {
-  app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
-  });
-} catch (err) {
-  console.error("Error al iniciar el servidor:", err);
-}
 
 if (!process.env.JWT_SECRET) {
   console.error("❌ JWT_SECRET no definida");
@@ -93,15 +88,23 @@ app.get("/user", authenticate, async (req, res, next) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🟢 Servidor corriendo en http://localhost:${PORT}`);
-});
-
 function generateJwt(user: User): string {
   return sign({ id: user.id, email: user.email }, process.env.JWT_SECRET!, {
     expiresIn: "1d"
   });
 }
+
+process.on("uncaughtException", (err) => {
+  console.error("❌ Uncaught Exception:");
+  console.error(err instanceof Error ? err.stack : err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("❌ Unhandled Rejection:");
+  console.error(reason instanceof Error ? reason.stack : reason);
+});
+
+
 
 console.log("📦 index.ts compilado correctamente");
 

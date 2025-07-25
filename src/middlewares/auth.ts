@@ -1,36 +1,27 @@
+// src/middlewares/auth.ts
 import jwt from "jsonwebtoken";
-import { prisma } from "../lib/prisma.js";
-import { NextFunction, Request, Response } from "express";
-
-interface JwtPayload {
-  email: string;
-}
+import { Request, Response, NextFunction } from "express";
 
 export const authenticate = async (
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<any> => {
+) => {
   const authHeader = req.headers.authorization;
-
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
   const token = authHeader.split(" ")[1];
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET no definida");
+  }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "JWT_SECRET") as JwtPayload;
-
-    const user = await prisma.user.findUnique({
-      where: { email: decoded.email }
-    });
-
-    // Asegurás tipado si extendés el Request (opcional)
-    (req as any).user = user ?? undefined;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
+    (req as any).user = decoded;
     next();
   } catch (err) {
-    (req as any).user = undefined;
-    next();
+    return res.status(401).json({ error: "Invalid token" });
   }
 };
