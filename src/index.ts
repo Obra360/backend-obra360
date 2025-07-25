@@ -18,13 +18,20 @@ import authRouter from "./routes/auth.routes.js"; //Se usa auth.routes.ts que se
 const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 3000;
+const allowedOrigins = [
+  "https://frontend-obra360.onrender.com",
+  "http://localhost:3000"
+  ];
 
 if (!process.env.JWT_SECRET) {
   console.error("❌ JWT_SECRET no definida");
   process.exit(1);
 }
 
-app.use(cors());
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
 app.use(express.json());
 app.use("/auth", authRouter);
 app.use('/api/obras', obrasRouter);
