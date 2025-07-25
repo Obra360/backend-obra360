@@ -11,7 +11,7 @@ const { sign } = pkg;
 import { compare, hash } from "bcryptjs";
 import { authenticate } from "./middlewares/auth";
 console.log("🟢 authenticate cargado");
-import authRouter from "./routes/auth.routes.js"; //Se usa auth.routes.ts que se hizo para la conexion entre front/BACKend
+import authRouter from "./routes/auth.routes"; //Se usa auth.routes.ts que se hizo para la conexion entre front/BACKend
 
 
 
