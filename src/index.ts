@@ -1,7 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 dotenv.config(); // Cargar variables de entorno desde .env
-import obrasRouter from "./routes/obras";
+import obrasRouter from "./routes/obras.js";
 import path from "path";
 import cors from "cors";
 import { PrismaClient, User } from '@prisma/client';
@@ -9,9 +9,9 @@ import { fileURLToPath } from "url";
 import pkg from "jsonwebtoken";
 const { sign } = pkg;
 import { compare, hash } from "bcryptjs";
-import { authenticate } from "./middlewares/auth";
+import { authenticate } from "./middlewares/auth.js";
 console.log("🟢 authenticate cargado");
-import authRouter from "./routes/auth.routes"; //Se usa auth.routes.ts que se hizo para la conexion entre front/BACKend
+import authRouter from "./routes/auth.routes.js"; //Se usa auth.routes.ts que se hizo para la conexion entre front/BACKend
 
 
 
