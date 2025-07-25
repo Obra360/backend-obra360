@@ -104,7 +104,10 @@ process.on("unhandledRejection", (reason) => {
   console.error(reason instanceof Error ? reason.stack : reason);
 });
 
-
-
 console.log("📦 index.ts compilado correctamente");
+
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
+});
+
 
