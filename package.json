@@ -1,18 +1,14 @@
 {
   "name": "backend-obra360",
   "version": "1.0.0",
-  "type": "commonjs",
+  "type": "module",
   "description": "Backend and API for Obra360",
   "main": "dist/index.js",
-  "directories": {
-    "test": "tests"
-  },
   "scripts": {
+    "dev": "NODE_OPTIONS=--trace-warnings nodemon --watch src --ext ts --exec 'node --loader ts-node/esm src/index.ts'",
     "build": "tsc",
-    "prestart": "echo skipping prestart",
     "start": "prisma generate && node dist/index.js",
-    "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky install",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -21,11 +17,12 @@
     "migrate:prod": "dotenv -e .env.production -- prisma migrate deploy",
     "studio": "prisma studio",
     "studio:prod": "dotenv -e .env.production -- prisma studio",
-    "db:pull:prod": "dotenv -e .env.production -- prisma db pull"
+    "db:pull:prod": "dotenv -e .env.production -- prisma db pull",
+    "test": "echo \"No test defined yet\" && exit 0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "directories": {
+    "test": "tests"
+  },
   "dependencies": {
     "@prisma/client": "^6.12.0",
     "@supabase/supabase-js": "^2.52.0",

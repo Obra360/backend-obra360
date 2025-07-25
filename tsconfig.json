@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "target": "es2020",
-    "module": "esnext",
+    "target": "ES2020",
+    "module": "ESNext",                         // ESM compatible
     "lib": ["ES2022"],
-    "moduleResolution": "node",
+    "moduleResolution": "Node",                 // Recomendado para ESM
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
@@ -12,10 +12,10 @@
     "resolveJsonModule": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "allowJs": true,
     "sourceMap": true,
     "removeComments": true,
-    "noEmitOnError": true
+    "noEmitOnError": true,
+    "allowJs": false                             // ⛔️ NO compiles JS si trabajás solo con .ts
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"],
