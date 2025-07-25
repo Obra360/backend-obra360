@@ -1,7 +1,7 @@
 {
   "name": "backend-obra360",
   "version": "1.0.0",
-  "type": "module",
+  "type": "commonjs",
   "description": "Backend and API for Obra360",
   "main": "dist/index.js",
   "directories": {
@@ -11,7 +11,7 @@
     "build": "tsc",
     "prestart": "echo skipping prestart",
     "start": "prisma generate && node dist/index.js",
-    "dev": "nodemon --watch src --ext ts --exec \"node --loader ts-node/esm --no-warnings\" src/index.ts",
+    "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -22,7 +22,6 @@
     "studio": "prisma studio",
     "studio:prod": "dotenv -e .env.production -- prisma studio",
     "db:pull:prod": "dotenv -e .env.production -- prisma db pull"
-    
   },
   "keywords": [],
   "author": "",
@@ -42,7 +41,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.0.14",
+    "@types/node": "^24.1.0",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9.31.0",
     "eslint-config-prettier": "^10.1.5",

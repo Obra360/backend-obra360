@@ -8,13 +8,23 @@ import pkg from "jsonwebtoken";
 const { sign } = pkg;
 import { compare, hash } from "bcryptjs";
 import { authenticate} from "./middlewares/auth.js";
-import authRouter from "./routes/auth.routes"; //Se usa auth.routes.ts que se hizo para la conexion entre front/BACKend
+import authRouter from "./routes/auth.routes.js"; //Se usa auth.routes.ts que se hizo para la conexion entre front/BACKend
 
-app.use("/auth", authRouter);
+
 
 const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use("/auth", authRouter);
+//registra un mal inicio en el servidor
+try {
+  app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  });
+} catch (err) {
+  console.error("Error al iniciar el servidor:", err);
+}
 
 if (!process.env.JWT_SECRET) {
   console.error("❌ JWT_SECRET no definida");

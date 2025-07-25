@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
+    "target": "es2020",
+    "module": "esnext",
     "lib": ["ES2022"],
-    "moduleResolution": "node16",
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
