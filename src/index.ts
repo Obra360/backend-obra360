@@ -29,12 +29,19 @@ if (!process.env.JWT_SECRET) {
 }
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      "https://frontend-obra360.onrender.com",
+      "http://localhost:3000"
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("No permitido por CORS"));
+    }
+  },
   credentials: true,
 }));
-app.use(express.json());
-app.use("/auth", authRouter);
-app.use('/api/obras', obrasRouter);
 
 // Necesario para que __dirname funcione con ES Modules
 const __filename = fileURLToPath(import.meta.url);
