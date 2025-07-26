@@ -1,9 +1,9 @@
 import express from "express";
 import dotenv from "dotenv";
+import cors from "cors";
 dotenv.config(); // Cargar variables de entorno desde .env
 import obrasRouter from "./routes/obras.js";
 import path from "path";
-import cors from "cors";
 import { PrismaClient, User } from '@prisma/client';
 import { fileURLToPath } from "url";
 import pkg from "jsonwebtoken";
@@ -22,12 +22,6 @@ const allowedOrigins = [
   "https://frontend-obra360.onrender.com",
   "http://localhost:3000"
   ];
-
-if (!process.env.JWT_SECRET) {
-  console.error("❌ JWT_SECRET no definida");
-  process.exit(1);
-}
-
 app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = [
@@ -42,6 +36,27 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+app.use(express.json()); 
+
+app.options("*", cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("No permitido por CORS"));
+    }
+  },
+  credentials: true,
+}));
+
+
+if (!process.env.JWT_SECRET) {
+  console.error("❌ JWT_SECRET no definida");
+  process.exit(1);
+}
+
+
 
 // Necesario para que __dirname funcione con ES Modules
 const __filename = fileURLToPath(import.meta.url);
