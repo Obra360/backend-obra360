@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 dotenv.config(); // Cargar variables de entorno desde .env
+import userRouter from "./routes/user.routes.js";
 import obrasRouter from "./routes/obras.js";
 import path from "path";
 import { PrismaClient, User } from '@prisma/client';
@@ -56,6 +57,8 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
+app.use("/api/users", userRouter);
+
 
 
 // Necesario para que __dirname funcione con ES Modules
@@ -72,21 +75,6 @@ app.get("/*.html", (req, res) => {
     if (err) res.status(404).send("Archivo no encontrado");
   });
 });
-
-// Registro de usuario
-app.post("/users", async (req, res) => {
-  try {
-    const hashedPassword = await hash(req.body.password, 10);
-    const user = await prisma.user.create({
-      data: { ...req.body, password: hashedPassword }
-    });
-    const { password: _, ...userWithoutPassword } = user;
-    res.json({ ...userWithoutPassword, token: generateJwt(user) });
-  } catch {
-    res.status(400).json({ error: "Email or username is not unique" });
-  }
-});
-
 // Login
 app.post("/users/login", async (req, res) => {
   try {

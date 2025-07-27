@@ -25,3 +25,12 @@ export const authenticate = async (
     return res.status(401).json({ error: "Invalid token" });
   }
 };
+
+export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+  const user = (req as any).user;
+  if (!user || user.role !== "ADMIN") {
+    return res.status(403).json({ error: "Acceso denegado: solo administradores" });
+  }
+  next();
+};
+
