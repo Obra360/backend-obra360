@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
-import { authenticate, requireAdmin } from "../middlewares/auth.js";
 
 const router = Router();
 

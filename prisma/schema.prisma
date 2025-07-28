@@ -40,6 +40,8 @@ model Obra {
   userid    String      @db.Uuid
   articulos Articulos[]
   user      User        @relation(fields: [userid], references: [id])
+  role      UserRole       @default(OPERARIO)
+
 }
 
 model Articulos {
@@ -53,6 +55,8 @@ model Articulos {
   precio_final Float?        @default(0)
   Obra         Obra          @relation(fields: [ObraID], references: [id])
   movimientos  Movimientos[]
+  role      UserRole       @default(OPERARIO)
+
 }
 
 model Movimientos {
@@ -69,7 +73,7 @@ model Movimientos {
   Tipo_unidad             String
   Precio_total_disponible Decimal        @db.Decimal(10, 2)
   articulo                Articulos      @relation(fields: [ID_producto], references: [ID_Producto])
-
+  role      UserRole       @default(OPERARIO)
   @@index([ID_producto])
 }
 
@@ -83,6 +87,8 @@ model Certificacion {
   Cantidad          Int
   Descripcion       String?
   Auto_fecha        DateTime @default(now())
+  role      UserRole       @default(OPERARIO)
+
 }
 
 enum UserRole {
@@ -105,7 +111,7 @@ model Salario {
   obrasMensual String  @map("obras_mensual")
   salario      Float
   recibo       String? // Se asume que el recibo puede ser opcional
-  role         String
+  role      UserRole       @default(OPERARIO)
 
   // Mapea el nombre del modelo a la tabla "Salarios" en la base de datos
   @@map("Salarios")
