@@ -9,7 +9,7 @@ import { fileURLToPath } from "url";
 import pkg from "jsonwebtoken";
 const { sign } = pkg;
 import { compare, hash } from "bcryptjs";
-import { authenticate } from "./middlewares/auth.js";
+import { authenticate, requireAdmin} from "./middlewares/auth.js";
 console.log("🟢 authenticate cargado");
 import userRouter from "./routes/user.routes.js";
 import obrasRouter from "./routes/obras.js";
