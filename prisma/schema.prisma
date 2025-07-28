@@ -38,25 +38,20 @@ model Obra {
   ciudad    String
   createdAt DateTime    @default(now())
   userid    String      @db.Uuid
+  role      String?
   articulos Articulos[]
   user      User        @relation(fields: [userid], references: [id])
-  role      UserRole       @default(OPERARIO)
-
 }
 
 model Articulos {
-  ID_Producto  Int           @id @default(autoincrement())
-  CodigoInterno  String   @unique
-  Nombre       String
-  Unidad       String
-  Cantidad     Int
-  ObraID       String        @db.Uuid
-  precio       Float         @default(0)
-  precio_final Float?        @default(0)
-  Obra         Obra          @relation(fields: [ObraID], references: [id])
-  movimientos  Movimientos[]
-  role      UserRole       @default(OPERARIO)
-
+  ID_Producto Int           @id @default(autoincrement())
+  Nombre      String
+  Unidad      String
+  Cantidad    Int
+  ObraID      String        @db.Uuid
+  role        String?
+  Obra        Obra          @relation(fields: [ObraID], references: [id])
+  movimientos Movimientos[]
 }
 
 model Movimientos {
@@ -72,8 +67,9 @@ model Movimientos {
   Precio                  Decimal        @db.Decimal(10, 2)
   Tipo_unidad             String
   Precio_total_disponible Decimal        @db.Decimal(10, 2)
+  Role                    String?
   articulo                Articulos      @relation(fields: [ID_producto], references: [ID_Producto])
-  role      UserRole       @default(OPERARIO)
+
   @@index([ID_producto])
 }
 
@@ -87,8 +83,21 @@ model Certificacion {
   Cantidad          Int
   Descripcion       String?
   Auto_fecha        DateTime @default(now())
-  role      UserRole       @default(OPERARIO)
+  role              String?  @db.VarChar
+}
 
+model Salario {
+  idEmpleado   String  @id(map: "salarios_pkey") @map("id_empleado") @db.VarChar(10)
+  nombre       String  @db.VarChar(100)
+  apellido     String  @db.VarChar(100)
+  dni          Int
+  sexo         String  @db.Char(1)
+  obrasMensual String? @map("obras_mensual") @db.VarChar(100)
+  salario      Float   @db.Real
+  recibo       String? @db.VarChar(100)
+  role         String?
+
+  @@map("Salarios")
 }
 
 enum UserRole {
@@ -100,19 +109,4 @@ enum UserRole {
 enum TipoMovimiento {
   ingreso
   venta
-}
-
-model Salario {
-  idEmpleado   String  @id @map("id_empleado")
-  nombre       String
-  apellido     String
-  dni          Int
-  sexo         String
-  obrasMensual String  @map("obras_mensual")
-  salario      Float
-  recibo       String? // Se asume que el recibo puede ser opcional
-  role      UserRole       @default(OPERARIO)
-
-  // Mapea el nombre del modelo a la tabla "Salarios" en la base de datos
-  @@map("Salarios")
 }
