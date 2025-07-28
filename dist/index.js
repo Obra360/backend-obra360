@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 import pkg from "jsonwebtoken";
 const { sign } = pkg;
 import { compare } from "bcryptjs";
-import { authenticate } from "./middlewares/auth.js";
+import { authenticate } from "./middlewares/auth";
 console.log("🟢 authenticate cargado");
 import userRouter from "./routes/user.routes.js";
 import obrasRouter from "./routes/obras.js";
