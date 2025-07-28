@@ -95,3 +95,18 @@ enum TipoMovimiento {
   ingreso
   venta
 }
+
+model Salario {
+  idEmpleado   String  @id @map("id_empleado")
+  nombre       String
+  apellido     String
+  dni          Int
+  sexo         String
+  obrasMensual String  @map("obras_mensual")
+  salario      Float
+  recibo       String? // Se asume que el recibo puede ser opcional
+  role         String
+
+  // Mapea el nombre del modelo a la tabla "Salarios" en la base de datos
+  @@map("Salarios")
+}
