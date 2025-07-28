@@ -2,8 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 dotenv.config(); // Cargar variables de entorno desde .env
-import userRouter from "./routes/user.routes.js";
-import obrasRouter from "./routes/obras.js";
+
 import path from "path";
 import { PrismaClient, User } from '@prisma/client';
 import { fileURLToPath } from "url";
@@ -12,9 +11,13 @@ const { sign } = pkg;
 import { compare, hash } from "bcryptjs";
 import { authenticate } from "./middlewares/auth.js";
 console.log("🟢 authenticate cargado");
+import userRouter from "./routes/user.routes.js";
+import obrasRouter from "./routes/obras.js";
 import authRouter from "./routes/auth.routes.js"; //Se usa auth.routes.ts que se hizo para la conexion entre front/BACKend
-
-
+import articulosRouter from './routes/articulos.routes.js';
+import salariosRouter from './routes/salarios.routes.js';
+import certificacionRouter from './routes/certificacion.routes.js';
+import movimientosRouter from './routes/movimientos.routes.js';
 
 const prisma = new PrismaClient();
 const app = express();
@@ -56,8 +59,6 @@ if (!process.env.JWT_SECRET) {
   console.error("❌ JWT_SECRET no definida");
   process.exit(1);
 }
-
-app.use("/api/users", userRouter);
 
 
 
@@ -121,6 +122,15 @@ process.on("unhandledRejection", (reason) => {
 });
 
 console.log("📦 index.ts compilado correctamente");
+
+app.use(authenticate);
+app.use('/api/obras', obrasRouter);
+app.use('/api/articulos', articulosRouter);
+app.use('/api/certificacion', certificacionRouter);
+app.use('/api/movimientos', movimientosRouter);
+app.use('/api/salarios', salariosRouter);
+app.use("/api/users", userRouter);
+
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
