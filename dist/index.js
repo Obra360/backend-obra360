@@ -39,7 +39,6 @@ app.use(cors({
     credentials: true,
 }));
 app.use(express.json());
-app.use();
 app.options("*", cors({
     origin: function (origin, callback) {
         if (!origin || allowedOrigins.includes(origin)) {
