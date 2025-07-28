@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { prisma } from '../lib/prisma'; // Asumimos una instancia única de Prisma
+import { prisma } from '../lib/prisma.js'; // Asumimos una instancia única de Prisma
 
 const router = Router();
 
