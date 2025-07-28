@@ -8,14 +8,14 @@ import { fileURLToPath } from "url";
 import pkg from "jsonwebtoken";
 const { sign } = pkg;
 import { compare } from "bcryptjs";
-import { authenticate } from "./middlewares/auth";
+import { authenticate } from "./middlewares/auth.js";
 console.log("🟢 authenticate cargado");
-import userRouter from "./routes/user.routes";
-import obrasRouter from "./routes/obras";
-import articulosRouter from './routes/articulos.routes';
-import salariosRouter from './routes/salarios.routes';
-import certificacionRouter from './routes/certificacion.routes';
-import movimientosRouter from './routes/movimientos.routes';
+import userRouter from "./routes/user.routes.js";
+import obrasRouter from "./routes/obras.js";
+import articulosRouter from './routes/articulos.routes.js';
+import salariosRouter from './routes/salarios.routes.js';
+import certificacionRouter from './routes/certificacion.routes.js';
+import movimientosRouter from './routes/movimientos.routes.js';
 const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,7 +39,6 @@ app.use(cors({
     credentials: true,
 }));
 app.use(express.json());
-app.use();
 app.options("*", cors({
     origin: function (origin, callback) {
         if (!origin || allowedOrigins.includes(origin)) {
