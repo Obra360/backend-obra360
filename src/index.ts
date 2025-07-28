@@ -13,7 +13,6 @@ import { authenticate } from "./middlewares/auth.js";
 console.log("🟢 authenticate cargado");
 import userRouter from "./routes/user.routes.js";
 import obrasRouter from "./routes/obras.js";
-import authRouter from "./routes/auth.routes.js"; //Se usa auth.routes.ts que se hizo para la conexion entre front/BACKend
 import articulosRouter from './routes/articulos.routes.js';
 import salariosRouter from './routes/salarios.routes.js';
 import certificacionRouter from './routes/certificacion.routes.js';
