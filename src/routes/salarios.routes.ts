@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
     }
 
     // La única línea que cambia es esta:
-    const salarios = await prisma.salarios.findMany({
+    const salarios = await prisma.salario.findMany({
       where: whereClause,
     });
 
