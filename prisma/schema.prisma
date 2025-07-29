@@ -38,7 +38,6 @@ model Obra {
   ciudad    String
   createdAt DateTime    @default(now())
   userid    String      @db.Uuid
-  role      String?
   articulos Articulos[]
   user      User        @relation(fields: [userid], references: [id])
 }
