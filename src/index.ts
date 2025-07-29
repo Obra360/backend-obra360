@@ -12,7 +12,7 @@ import { compare, hash } from "bcryptjs";
 import { authenticate, requireAdmin} from "./middlewares/auth.js";
 console.log("🟢 authenticate cargado");
 import userRouter from "./routes/user.routes.js";
-import obrasRouter from "./routes/obras";
+import obrasRouter from "./routes/obras.js";
 import articulosRouter from './routes/articulos.routes.js';
 import salariosRouter from './routes/salarios.routes.js';
 import certificacionRouter from './routes/certificacion.routes.js';
