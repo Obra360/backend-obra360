@@ -39,75 +39,7 @@ declare global {
 
 // ==================== RUTAS DE OBRAS ====================
 
-// GET /api/obras - Obtener todas las obras
-router.get('/', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const obras = await prisma.obra.findMany({
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            role: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
 
-    res.json(obras);
-  } catch (error) {
-    console.error('Error al obtener obras:', error);
-    res.status(500).json({ error: 'Error al obtener obras' });
-  }
-});
-
-// GET /api/obras/:id - Obtener una obra específica
-router.get('/:id', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-    
-    // Validar que el ID sea un UUID válido
-    if (!isValidUUID(id)) {
-      res.status(400).json({ error: 'ID de obra inválido' });
-      return;
-    }
-    
-    const obra = await prisma.obra.findUnique({
-      where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            role: true
-          }
-        },
-        articulos: {
-          include: {
-            movimientos: true
-          }
-        }
-      }
-    });
-
-    if (!obra) {
-      res.status(404).json({ error: 'Obra no encontrada' });
-      return;
-    }
-
-    res.json(obra);
-  } catch (error) {
-    console.error('Error al obtener obra:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
 
 // Add this route BEFORE the POST route
 router.get('/test', async (req: Request, res: Response): Promise<void> => {
@@ -278,6 +210,119 @@ router.post('/test-create', async (req: Request, res: Response): Promise<void> =
     }
     
     res.status(500).json(errorResponse);
+  }
+});
+
+// GET /api/obras/stats/general - Obtener estadísticas de obras (solo para admin)
+router.get('/stats/general', async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Verificar que el usuario esté autenticado
+    if (!req.user) {
+      res.status(401).json({ error: 'Usuario no autenticado' });
+      return;
+    }
+
+    // Verificar que el usuario sea admin
+    if (req.user.role !== 'ADMIN') {
+      res.status(403).json({ 
+        error: 'Acceso denegado: solo administradores',
+        message: 'No tienes permisos para ver estadísticas generales'
+      });
+      return;
+    }
+
+    const [totalObras, obrasPrivadas, obrasPublicas, obrasRecientes] = await Promise.all([
+      prisma.obra.count(),
+      prisma.obra.count({ where: { tipo: 'Obra privada' } }),
+      prisma.obra.count({ where: { tipo: 'Obra pública' } }),
+      prisma.obra.count({
+        where: {
+          createdAt: {
+            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Últimos 30 días
+          }
+        }
+      })
+    ]);
+
+    res.json({
+      totalObras,
+      obrasPrivadas,
+      obrasPublicas,
+      obrasRecientes
+    });
+  } catch (error) {
+    console.error('Error al obtener estadísticas:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// GET /api/obras - Obtener todas las obras
+router.get('/', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const obras = await prisma.obra.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.json(obras);
+  } catch (error) {
+    console.error('Error al obtener obras:', error);
+    res.status(500).json({ error: 'Error al obtener obras' });
+  }
+});
+
+// GET /api/obras/:id - Obtener una obra específica
+router.get('/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    
+    // Validar que el ID sea un UUID válido
+    if (!isValidUUID(id)) {
+      res.status(400).json({ error: 'ID de obra inválido' });
+      return;
+    }
+    
+    const obra = await prisma.obra.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true
+          }
+        },
+        articulos: {
+          include: {
+            movimientos: true
+          }
+        }
+      }
+    });
+
+    if (!obra) {
+      res.status(404).json({ error: 'Obra no encontrada' });
+      return;
+    }
+
+    res.json(obra);
+  } catch (error) {
+    console.error('Error al obtener obra:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
@@ -502,48 +547,7 @@ router.get('/:id/articulos', async (req: Request, res: Response): Promise<void> 
   }
 });
 
-// GET /api/obras/stats/general - Obtener estadísticas de obras (solo para admin)
-router.get('/stats/general', async (req: Request, res: Response): Promise<void> => {
-  try {
-    // Verificar que el usuario esté autenticado
-    if (!req.user) {
-      res.status(401).json({ error: 'Usuario no autenticado' });
-      return;
-    }
 
-    // Verificar que el usuario sea admin
-    if (req.user.role !== 'ADMIN') {
-      res.status(403).json({ 
-        error: 'Acceso denegado: solo administradores',
-        message: 'No tienes permisos para ver estadísticas generales'
-      });
-      return;
-    }
-
-    const [totalObras, obrasPrivadas, obrasPublicas, obrasRecientes] = await Promise.all([
-      prisma.obra.count(),
-      prisma.obra.count({ where: { tipo: 'Obra privada' } }),
-      prisma.obra.count({ where: { tipo: 'Obra pública' } }),
-      prisma.obra.count({
-        where: {
-          createdAt: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Últimos 30 días
-          }
-        }
-      })
-    ]);
-
-    res.json({
-      totalObras,
-      obrasPrivadas,
-      obrasPublicas,
-      obrasRecientes
-    });
-  } catch (error) {
-    console.error('Error al obtener estadísticas:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
 
 // ==================== FUNCIONES DE UTILIDAD ====================
 
