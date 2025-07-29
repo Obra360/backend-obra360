@@ -7,7 +7,7 @@ import path from "path";
 import { PrismaClient, User } from '@prisma/client';
 import { fileURLToPath } from "url";
 import pkg from "jsonwebtoken";
-const { sign } = pkg;
+const { sign, verify } = pkg;
 import { compare, hash } from "bcryptjs";
 import { authenticate, requireAdmin} from "./middlewares/auth.js";
 console.log("🟢 authenticate cargado");
@@ -120,6 +120,33 @@ process.on("unhandledRejection", (reason) => {
 });
 
 console.log("📦 index.ts compilado correctamente");
+
+app.get("/auth/verify", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+    
+    
+    const decoded = verify(token, process.env.JWT_SECRET!) as any;
+    
+    
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id }
+    });
+    
+    if (!user) {
+      return res.status(401).json({ error: "User not found" });
+    }
+    
+    
+    res.json({ valid: true, user: { id: user.id, email: user.email, role: user.role } });
+  } catch (error) {
+    res.status(401).json({ error: "Invalid token" });
+  }
+});
 
 app.use(authenticate);
 app.use('/api/obras', obrasRouter);
