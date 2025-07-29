@@ -114,16 +114,13 @@ router.get('/test', async (req: Request, res: Response): Promise<void> => {
   try {
     console.log('Database test - User from token:', req.user);
     
-    // Test 1: Basic query
     const dbTest = await prisma.$queryRaw`SELECT current_timestamp`;
     console.log('Database connection: OK');
     
-    // Test 2: Count records
     const userCount = await prisma.user.count();
     const obraCount = await prisma.obra.count();
     console.log(`Users: ${userCount}, Obras: ${obraCount}`);
     
-    // Test 3: Find current user
     let currentUser = null;
     if (req.user?.id) {
       currentUser = await prisma.user.findUnique({
@@ -143,12 +140,12 @@ router.get('/test', async (req: Request, res: Response): Promise<void> => {
     console.error('Database test error:', error);
     res.status(500).json({ 
       error: 'Database error',
-      message: error.message 
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
 
-// POST /api/obras - Crear nueva obra
+// Main POST route
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
     console.log('=== POST /api/obras - START ===');
@@ -166,7 +163,6 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     const userId = req.user.id;
     console.log('3. User ID:', userId);
     
-    // Validation
     const validationErrors = validateObraData({ empresa, tipo, ciudad });
     if (validationErrors.length > 0) {
       console.log('ERROR: Validation failed:', validationErrors);
@@ -178,7 +174,6 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     }
     console.log('4. Validation passed');
     
-    // Check if user exists in database
     console.log('5. Checking if user exists in database...');
     try {
       const userExists = await prisma.user.findUnique({
@@ -195,7 +190,6 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       throw dbError;
     }
     
-    // Create obra
     console.log('7. Creating obra with data:', {
       empresa: empresa.trim(),
       tipo,
@@ -231,15 +225,59 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     
   } catch (error) {
     console.error('=== ERROR in POST /api/obras ===');
-    console.error('Error type:', error.constructor.name);
-    console.error('Error message:', error.message);
-    console.error('Error code:', error.code);
-    if (error.meta) console.error('Error meta:', error.meta);
-    console.error('Stack:', error.stack);
+    
+    if (error instanceof Error) {
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      console.error('Stack:', error.stack);
+    }
+    
+    // Handle Prisma-specific errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      const prismaError = error as any;
+      console.error('Error code:', prismaError.code);
+      if (prismaError.meta) {
+        console.error('Error meta:', prismaError.meta);
+      }
+    }
     
     res.status(500).json({ 
       error: 'Error interno del servidor'
     });
+  }
+});
+
+// Test create route
+router.post('/test-create', async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+    
+    const testObra = await prisma.obra.create({
+      data: {
+        empresa: 'Test',
+        tipo: 'Test Type',
+        ciudad: 'Test City',
+        userid: req.user.id
+      }
+    });
+    
+    res.json({ success: true, obra: testObra });
+  } catch (error) {
+    console.error('Test create error:', error);
+    
+    const errorResponse: any = {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+    
+    if (error && typeof error === 'object' && 'code' in error) {
+      errorResponse.code = (error as any).code;
+      errorResponse.meta = (error as any).meta;
+    }
+    
+    res.status(500).json(errorResponse);
   }
 });
 
