@@ -12,7 +12,7 @@ import { compare, hash } from "bcryptjs";
 import { authenticate, requireAdmin} from "./middlewares/auth.js";
 console.log("🟢 authenticate cargado");
 import userRouter from "./routes/user.routes.js";
-import obrasRouter from "./routes/obras.js";
+import obrasRouter from "./routes/obras";
 import articulosRouter from './routes/articulos.routes.js';
 import salariosRouter from './routes/salarios.routes.js';
 import certificacionRouter from './routes/certificacion.routes.js';
@@ -21,16 +21,14 @@ import movimientosRouter from './routes/movimientos.routes.js';
 const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 3000;
+
 const allowedOrigins = [
   "https://frontend-obra360.onrender.com",
   "http://localhost:3000"
-  ];
+];
+
 app.use(cors({
   origin: function (origin, callback) {
-    const allowedOrigins = [
-      "https://frontend-obra360.onrender.com",
-      "http://localhost:3000"
-    ];
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -38,6 +36,8 @@ app.use(cors({
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json()); 
@@ -52,13 +52,10 @@ app.options("*", cors({
   credentials: true,
 }));
 
-
 if (!process.env.JWT_SECRET) {
   console.error("❌ JWT_SECRET no definida");
   process.exit(1);
 }
-
-
 
 // Necesario para que __dirname funcione con ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -74,6 +71,9 @@ app.get("/*.html", (req, res) => {
     if (err) res.status(404).send("Archivo no encontrado");
   });
 });
+
+// ==================== RUTAS PÚBLICAS (SIN AUTENTICACIÓN) ====================
+
 // Login
 app.post("/users/login", async (req, res) => {
   try {
@@ -85,42 +85,18 @@ app.post("/users/login", async (req, res) => {
     if (!isPasswordCorrect) throw new Error("Incorrect password");
 
     const { password: _, ...userWithoutPassword } = user;
-    res.json({ ...userWithoutPassword, token: generateJwt(user) });
-  } catch {
-    res.status(401).json({ error: "Email or password are wrong" });
+    res.json({ 
+      ...userWithoutPassword, 
+      token: generateJwt(user),
+      message: "Login exitoso"
+    });
+  } catch (error) {
+    console.error("Error en login:", error);
+    res.status(401).json({ error: "Email o contraseña incorrectos" });
   }
 });
 
-// Autenticación protegida
-app.get("/user", authenticate, async (req, res, next) => {
-  try {
-    const user = (req as any).user;
-    if (!user) return res.sendStatus(401);
-    const { password: _, ...userWithoutPassword } = user;
-    res.json({ ...userWithoutPassword, token: generateJwt(user) });
-  } catch (err) {
-    next(err);
-  }
-});
-
-function generateJwt(user: User): string {
-  return sign({ id: user.id, email: user.email }, process.env.JWT_SECRET!, {
-    expiresIn: "1d"
-  });
-}
-
-process.on("uncaughtException", (err) => {
-  console.error("❌ Uncaught Exception:");
-  console.error(err instanceof Error ? err.stack : err);
-});
-
-process.on("unhandledRejection", (reason) => {
-  console.error("❌ Unhandled Rejection:");
-  console.error(reason instanceof Error ? reason.stack : reason);
-});
-
-console.log("📦 index.ts compilado correctamente");
-
+// Verificar token
 app.get("/auth/verify", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
@@ -129,9 +105,7 @@ app.get("/auth/verify", async (req, res) => {
       return res.status(401).json({ error: "No token provided" });
     }
     
-    
     const decoded = verify(token, process.env.JWT_SECRET!) as any;
-    
     
     const user = await prisma.user.findUnique({
       where: { id: decoded.id }
@@ -141,24 +115,152 @@ app.get("/auth/verify", async (req, res) => {
       return res.status(401).json({ error: "User not found" });
     }
     
-    
-    res.json({ valid: true, user: { id: user.id, email: user.email, role: user.role } });
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({ 
+      valid: true, 
+      user: userWithoutPassword 
+    });
   } catch (error) {
+    console.error("Error verificando token:", error);
     res.status(401).json({ error: "Invalid token" });
   }
 });
 
-app.use(authenticate);
-app.use('/api/obras', obrasRouter);
-app.use('/api/articulos', articulosRouter);
-app.use('/api/certificacion', certificacionRouter);
-app.use('/api/movimientos', movimientosRouter);
-app.use('/api/salarios', salariosRouter);
-app.use("/api/users", userRouter);
+// Health check
+app.get("/health", (req, res) => {
+  res.json({ 
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    service: 'obra360-backend'
+  });
+});
 
+// ==================== RUTAS PROTEGIDAS (CON AUTENTICACIÓN) ====================
+
+// Obtener usuario autenticado
+app.get("/user", authenticate, async (req, res, next) => {
+  try {
+    const user = (req as any).user;
+    if (!user) return res.sendStatus(401);
+    
+    // Obtener datos actualizados del usuario
+    const currentUser = await prisma.user.findUnique({
+      where: { id: user.id }
+    });
+    
+    if (!currentUser) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    
+    const { password: _, ...userWithoutPassword } = currentUser;
+    res.json({ 
+      ...userWithoutPassword, 
+      token: generateJwt(currentUser) 
+    });
+  } catch (err) {
+    console.error("Error obteniendo usuario:", err);
+    next(err);
+  }
+});
+
+// Aplicar autenticación a todas las rutas de API
+app.use("/api/users", authenticate, userRouter);
+app.use('/api/obras', authenticate, obrasRouter);
+app.use('/api/articulos', authenticate, articulosRouter);
+app.use('/api/certificacion', authenticate, certificacionRouter);
+app.use('/api/movimientos', authenticate, movimientosRouter);
+app.use('/api/salarios', authenticate, salariosRouter);
+
+// ==================== FUNCIONES AUXILIARES ====================
+
+function generateJwt(user: User): string {
+  return sign({ 
+    id: user.id, 
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role
+  }, process.env.JWT_SECRET!, {
+    expiresIn: "1d"
+  });
+}
+
+// ==================== MANEJO DE ERRORES ====================
+
+// Manejo de rutas no encontradas
+app.use('*', (req, res) => {
+  // No mostrar error 404 para archivos estáticos del frontend
+  if (req.originalUrl.startsWith('/api/')) {
+    res.status(404).json({ 
+      error: 'Ruta de API no encontrada',
+      message: `La ruta ${req.method} ${req.originalUrl} no existe`,
+      availableRoutes: [
+        'POST /users/login',
+        'GET /auth/verify',
+        'GET /user',
+        'GET /health',
+        'API Routes: /api/obras, /api/users, /api/articulos, etc.'
+      ]
+    });
+  } else {
+    // Para rutas del frontend, servir index.html (SPA routing)
+    res.sendFile(path.join(frontendPath, "index.html"));
+  }
+});
+
+// Manejo global de errores
+app.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Error no manejado:', error);
+  
+  // No enviar stack trace en producción
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  res.status(500).json({
+    error: 'Error interno del servidor',
+    message: isDevelopment ? error.message : 'Algo salió mal',
+    ...(isDevelopment && { stack: error.stack })
+  });
+});
+
+// Manejo de excepciones no capturadas
+process.on("uncaughtException", (err) => {
+  console.error("❌ Uncaught Exception:");
+  console.error(err instanceof Error ? err.stack : err);
+  // En producción, considera hacer graceful shutdown
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("❌ Unhandled Rejection:");
+  console.error(reason instanceof Error ? reason.stack : reason);
+  // En producción, considera hacer graceful shutdown
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+});
+
+console.log("📦 index.ts compilado correctamente");
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
+  console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 Frontend Path: ${frontendPath}`);
+  
+  // Mostrar rutas disponibles en desarrollo
+  if (process.env.NODE_ENV === 'development') {
+    console.log('\n📋 Rutas disponibles:');
+    console.log('   POST /users/login');
+    console.log('   GET  /auth/verify');
+    console.log('   GET  /user (auth required)');
+    console.log('   GET  /health');
+    console.log('   API  /api/obras (auth required)');
+    console.log('   API  /api/users (auth required)');
+    console.log('   API  /api/articulos (auth required)');
+    console.log('   API  /api/certificacion (auth required)');
+    console.log('   API  /api/movimientos (auth required)');
+    console.log('   API  /api/salarios (auth required)');
+  }
 });
-
-

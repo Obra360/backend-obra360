@@ -40,21 +40,16 @@ model Obra {
   userid    String      @db.Uuid
   articulos Articulos[]
   user      User        @relation(fields: [userid], references: [id])
-  // ❌ REMOVIDO: role      UserRole       @default(OPERARIO)
 }
 
 model Articulos {
-  ID_Producto    Int           @id @default(autoincrement())
-  CodigoInterno  String        @unique
-  Nombre         String
-  Unidad         String
-  Cantidad       Int
-  ObraID         String        @db.Uuid
-  precio         Float         @default(0)
-  precio_final   Float?        @default(0)
-  Obra           Obra          @relation(fields: [ObraID], references: [id])
-  movimientos    Movimientos[]
-  // ❌ REMOVIDO: role      UserRole       @default(OPERARIO)
+  ID_Producto Int           @id @default(autoincrement())
+  Nombre      String
+  Unidad      String
+  Cantidad    Int
+  ObraID      String        @db.Uuid
+  Obra        Obra          @relation(fields: [ObraID], references: [id])
+  movimientos Movimientos[]
 }
 
 model Movimientos {
@@ -70,9 +65,9 @@ model Movimientos {
   Precio                  Decimal        @db.Decimal(10, 2)
   Tipo_unidad             String
   Precio_total_disponible Decimal        @db.Decimal(10, 2)
+  Role                    String?
   articulo                Articulos      @relation(fields: [ID_producto], references: [ID_Producto])
-  // ❌ REMOVIDO: role      UserRole       @default(OPERARIO)
-  
+
   @@index([ID_producto])
 }
 
@@ -86,7 +81,19 @@ model Certificacion {
   Cantidad          Int
   Descripcion       String?
   Auto_fecha        DateTime @default(now())
-  // ❌ REMOVIDO: role      UserRole       @default(OPERARIO)
+}
+
+model Salario {
+  idEmpleado   String  @id(map: "salarios_pkey") @map("id_empleado") @db.VarChar(10)
+  nombre       String  @db.VarChar(100)
+  apellido     String  @db.VarChar(100)
+  dni          Int
+  sexo         String  @db.Char(1)
+  obrasMensual String? @map("obras_mensual") @db.VarChar(100)
+  salario      Float   @db.Real
+  recibo       String? @db.VarChar(100)
+
+  @@map("Salarios")
 }
 
 enum UserRole {
@@ -98,19 +105,4 @@ enum UserRole {
 enum TipoMovimiento {
   ingreso
   venta
-}
-
-model Salario {
-  idEmpleado   String  @id @map("id_empleado")
-  nombre       String
-  apellido     String
-  dni          Int
-  sexo         String
-  obrasMensual String  @map("obras_mensual")
-  salario      Float
-  recibo       String? // Se asume que el recibo puede ser opcional
-  // ❌ REMOVIDO: role      UserRole       @default(OPERARIO)
-
-  // Mapea el nombre del modelo a la tabla "Salarios" en la base de datos
-  @@map("Salarios")
 }
