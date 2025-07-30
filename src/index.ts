@@ -17,6 +17,7 @@ import articulosRouter from './routes/articulos.routes.js';
 import salariosRouter from './routes/salarios.routes.js';
 import certificacionRouter from './routes/certificacion.routes.js';
 import movimientosRouter from './routes/movimientos.routes.js';
+import asistenciaRouter from './routes/asistencia.routes.js';
 
 const prisma = new PrismaClient();
 const app = express();
@@ -171,6 +172,7 @@ app.use('/api/articulos', authenticate, articulosRouter);
 app.use('/api/certificacion', authenticate, certificacionRouter);
 app.use('/api/movimientos', authenticate, movimientosRouter);
 app.use('/api/salarios', authenticate, salariosRouter);
+app.use('/api/asistencia', authenticate, asistenciaRouter);
 
 // ==================== FUNCIONES AUXILIARES ====================
 
@@ -200,7 +202,7 @@ app.use('*', (req, res) => {
         'GET /auth/verify',
         'GET /user',
         'GET /health',
-        'API Routes: /api/obras, /api/users, /api/articulos, etc.'
+        'API Routes: /api/obras, /api/users, /api/articulos, /api/asistencia, etc.'
       ]
     });
   } else {
@@ -262,5 +264,36 @@ app.listen(PORT, () => {
     console.log('   API  /api/certificacion (auth required)');
     console.log('   API  /api/movimientos (auth required)');
     console.log('   API  /api/salarios (auth required)');
+    console.log('   API  /api/asistencia (auth required) ✨ NUEVO');
+  }
+});
+
+// Test de asistencia (mejorado)
+app.get('/test-asistencia', async (req, res) => {
+  try {
+    const count = await prisma.asistencia.count();
+    const sample = await prisma.asistencia.findFirst({
+      include: {
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      }
+    });
+    
+    res.json({ 
+      message: '✅ Asistencia funciona correctamente!', 
+      totalRegistros: count,
+      ejemploRegistro: sample
+    });
+  } catch (error) {
+    console.error('Error en test-asistencia:', error);
+    res.status(500).json({ 
+      error: error.message,
+      message: '❌ Error probando tabla asistencia'
+    });
   }
 });

@@ -9,17 +9,18 @@ datasource db {
 }
 
 model User {
-  id        String         @id @default(uuid()) @db.Uuid
-  email     String         @unique
-  password  String
-  firstName String
-  lastName  String
-  role      UserRole       @default(OPERARIO)
-  isActive  Boolean        @default(true)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  obras     Obra[]
-  tokens    RefreshToken[]
+  id          String         @id @default(uuid()) @db.Uuid
+  email       String         @unique
+  password    String
+  firstName   String
+  lastName    String
+  role        UserRole       @default(OPERARIO)
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  obras       Obra[]
+  tokens      RefreshToken[]
+  asistencias asistencias[]
 }
 
 model RefreshToken {
@@ -96,6 +97,27 @@ model Salario {
   @@map("Salarios")
 }
 
+model asistencias {
+  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String            @db.Uuid
+  fecha         DateTime          @db.Date
+  horaEntrada   String?
+  horaSalida    String?
+  horasTotales  String?
+  horasNormales String?
+  horasExtra    String?
+  observaciones String?
+  estado        estado_asistencia @default(PENDIENTE)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @default(now())
+  createdBy     String?           @db.Uuid
+  User          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fecha])
+  @@index([fecha])
+  @@index([userId])
+}
+
 enum UserRole {
   ADMIN
   SUPERVISOR
@@ -105,4 +127,11 @@ enum UserRole {
 enum TipoMovimiento {
   ingreso
   venta
+}
+
+enum estado_asistencia {
+  PENDIENTE
+  COMPLETO
+  EDITADO
+  AUSENTE
 }
