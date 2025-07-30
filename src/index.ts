@@ -271,10 +271,10 @@ app.listen(PORT, () => {
 // Test de asistencia (mejorado)
 app.get('/test-asistencia', async (req, res) => {
   try {
-    const count = await prisma.asistencia.count();
-    const sample = await prisma.asistencia.findFirst({
+    const count = await prisma.asistencias.count();
+    const sample = await prisma.asistencias.findFirst({
       include: {
-        user: {
+        User: {
           select: {
             firstName: true,
             lastName: true,
@@ -287,13 +287,18 @@ app.get('/test-asistencia', async (req, res) => {
     res.json({ 
       message: '✅ Asistencia funciona correctamente!', 
       totalRegistros: count,
-      ejemploRegistro: sample
+      ejemploRegistro: sample,
+      schemaInfo: {
+        modelo: 'asistencias',
+        relacion: 'User',
+        enums: ['estado_asistencia', 'UserRole']
+      }
     });
   } catch (error) {
     console.error('Error en test-asistencia:', error);
     res.status(500).json({ 
-      error: error.message,
-      message: '❌ Error probando tabla asistencia'
+      error: error instanceof Error ? error.message : 'Error desconocido',
+      message: '❌ Error probando tabla asistencias'
     });
   }
 });
