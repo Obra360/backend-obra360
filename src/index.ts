@@ -249,41 +249,41 @@ app.listen(PORT, () => {
 // ==================== RUTAS DE TEST ====================
 
 // Test de certificaciones (corregido)
-app.get('/test-certificaciones', async (req, res) => {
-  try {
-    const count = await prisma.certificacion.count();
-    const sample = await prisma.certificacion.findFirst({
-      include: {
-        items: true,
-        user: { // CORREGIDO: la relación se llama 'user'
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        }
-      }
-    });
+// app.get('/test-certificaciones', async (req, res) => {
+//   try {
+//     const count = await prisma.certificacion.count();
+//     const sample = await prisma.certificacion.findFirst({
+//       include: {
+//         items: true,
+//         user: { // CORREGIDO: la relación se llama 'user'
+//           select: {
+//             firstName: true,
+//             lastName: true,
+//             email: true
+//           }
+//         }
+//       }
+//     });
 
-    res.json({
-      message: '✅ Certificaciones funciona correctamente!',
-      totalRegistros: count,
-      ejemploRegistro: sample,
-      schemaInfo: {
-        modelo: 'Certificacion',
-        itemsModelo: 'ItemCertificado',
-        relacion: 'User',
-        enums: ['EstadoCertificacion', 'UserRole']
-      }
-    });
-  } catch (error) {
-    console.error('Error en test-certificaciones:', error);
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'Error desconocido',
-      message: '❌ Error probando tabla certificaciones'
-    });
-  }
-});
+//     res.json({
+//       message: '✅ Certificaciones funciona correctamente!',
+//       totalRegistros: count,
+//       ejemploRegistro: sample,
+//       schemaInfo: {
+//         modelo: 'Certificacion',
+//         itemsModelo: 'ItemCertificado',
+//         relacion: 'User',
+//         enums: ['EstadoCertificacion', 'UserRole']
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Error en test-certificaciones:', error);
+//     res.status(500).json({
+//       error: error instanceof Error ? error.message : 'Error desconocido',
+//       message: '❌ Error probando tabla certificaciones'
+//     });
+//   }
+// });
 
 // Test de asistencia (corregido)
 app.get('/test-asistencia', async (req, res) => {
@@ -292,7 +292,7 @@ app.get('/test-asistencia', async (req, res) => {
     const count = await prisma.asistencia.count(); 
     const sample = await prisma.asistencia.findFirst({
       include: {
-        user: { // CORREGIDO: La relación se llama 'user'
+        User: { // CORREGIDO: La relación se llama 'user'
           select: {
             firstName: true,
             lastName: true,

@@ -83,7 +83,7 @@ router.get("/", authenticate, async (req: AuthenticatedRequest, res: Response): 
     const registros = await prisma.asistencia.findMany({
       where,
       include: {
-        user: { // CORREGIDO: la relación se llama 'user'
+        User: { // CORREGIDO: la relación se llama 'user'
           select: { id: true, firstName: true, lastName: true, email: true }
         }
       },
@@ -93,8 +93,8 @@ router.get("/", authenticate, async (req: AuthenticatedRequest, res: Response): 
     const registrosFormateados = registros.map((registro) => ({
       id: registro.id,
       empleadoId: registro.userId,
-      empleadoNombre: `${registro.user.firstName} ${registro.user.lastName}`, // CORREGIDO: 'user' en minúscula
-      empleadoEmail: registro.user.email, // CORREGIDO: 'user' en minúscula
+      empleadoNombre: `${registro.User.firstName} ${registro.User.lastName}`, // CORREGIDO: 'user' en minúscula
+      empleadoEmail: registro.User.email, // CORREGIDO: 'user' en minúscula
       fecha: registro.fecha.toISOString().split('T')[0],
       horaEntrada: registro.horaEntrada,
       horaSalida: registro.horaSalida,
@@ -141,7 +141,7 @@ router.post("/marcar", authenticate, async (req: AuthenticatedRequest, res: Resp
 
 // PUT /api/asistencia/:id - Actualizar registro completo
 router.put("/:id", authenticate, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    // ... (Lógica similar, corregir 'prisma.asistencias' a 'prisma.asistencia')
+    // ... (Lógica similar, corregir 'prisma.asistencia' a 'prisma.asistencia')
     try {
         const { id } = req.params;
         // CORREGIDO: 'asistencia' en minúscula
@@ -161,7 +161,7 @@ router.put("/:id", authenticate, async (req: AuthenticatedRequest, res: Response
 
 // DELETE /api/asistencia/:id - Eliminar registro
 router.delete("/:id", authenticate, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    // ... (Lógica similar, corregir 'prisma.asistencias' a 'prisma.asistencia')
+    // ... (Lógica similar, corregir 'prisma.asistencia' a 'prisma.asistencia')
     try {
         const { id } = req.params;
         // CORREGIDO: 'asistencia' en minúscula

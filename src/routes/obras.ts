@@ -42,7 +42,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     }
     const userId = req.user.id;
 
-    // CORREGIDO: 'userid' ahora es 'userId'
+    // CORREGIDO: 'userId' ahora es 'userId'
     const nuevaObra = await prisma.obra.create({
       data: {
         empresa: empresa.trim(),
@@ -72,6 +72,50 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ error: 'Error al obtener obras' });
   }
 });
+
+// GET /api/obras/:id - Obtener una obra específica
+router.get('/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    
+    // Validar que el ID sea un UUID válido
+    if (!isValidUUID(id)) {
+      res.status(400).json({ error: 'ID de obra inválido' });
+      return;
+    }
+    
+    const obra = await prisma.obra.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true
+          }
+        },
+        articulos: {
+          include: {
+            movimientos: true
+          }
+        }
+      }
+    });
+
+    if (!obra) {
+      res.status(404).json({ error: 'Obra no encontrada' });
+      return;
+    }
+
+    res.json(obra);
+  } catch (error) {
+    console.error('Error al obtener obra:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 
 // GET /api/obras/:id/articulos - Obtener artículos de una obra
 router.get('/:id/articulos', async (req: Request, res: Response): Promise<void> => {
@@ -123,7 +167,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
             res.status(404).json({ error: 'Obra no encontrada' });
             return;
         }
-        // CORREGIDO: 'userid' ahora es 'userId'
+        // CORREGIDO: 'userId' ahora es 'userId'
         if (obraExistente.userId !== req.user.id && !['ADMIN', 'SUPERVISOR'].includes(req.user.role)) {
             res.status(403).json({ error: 'No tienes permisos para editar esta obra' });
             return;
@@ -156,7 +200,7 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
             res.status(404).json({ error: 'Obra no encontrada' });
             return;
         }
-        // CORREGIDO: 'userid' ahora es 'userId'
+        // CORREGIDO: 'userId' ahora es 'userId'
         if (obraExistente.userId !== req.user.id && !['ADMIN', 'SUPERVISOR'].includes(req.user.role)) {
             res.status(403).json({ error: 'No tienes permisos para eliminar esta obra' });
             return;
@@ -172,6 +216,37 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
+
+// ==================== FUNCIONES DE UTILIDAD ====================
+
+function validateObraData(data: CreateObraRequest): string[] {
+  const errors: string[] = [];
+  
+  if (!data.empresa || !data.empresa.trim()) {
+    errors.push('El nombre de la empresa es requerido');
+  }
+  
+  if (!data.tipo) {
+    errors.push('El tipo de obra es requerido');
+  } else {
+    const tiposValidos = ['Obra privada', 'Obra pública'];
+    if (!tiposValidos.includes(data.tipo)) {
+      errors.push('Tipo de obra inválido. Debe ser "Obra privada" o "Obra pública"');
+    }
+  }
+  
+  if (!data.ciudad || !data.ciudad.trim()) {
+    errors.push('La ciudad es requerida');
+  }
+  
+  return errors;
+}
+
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
 
 
 export default router;

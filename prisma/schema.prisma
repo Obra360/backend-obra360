@@ -9,76 +9,74 @@ datasource db {
 }
 
 model User {
-  id              String           @id @default(uuid()) @db.Uuid
-  email           String           @unique
+  id              String          @id @default(uuid()) @db.Uuid
+  email           String          @unique
   password        String
   firstName       String
   lastName        String
-  role            UserRole         @default(OPERARIO)
-  isActive        Boolean          @default(true)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  role            UserRole        @default(OPERARIO)
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
   obras           Obra[]
-  tokens          RefreshToken[]
+  RefreshToken    RefreshToken[]
   asistencias     Asistencia[]
   certificaciones Certificacion[]
 
   @@map("User")
 }
 
-
 model RefreshToken {
   id        String   @id @default(uuid())
   token     String   @unique
-  userId    String   @db.Uuid @map("user_id")
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  userId    String   @db.Uuid
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("RefreshToken")
 }
 
 model Obra {
-  id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   empresa   String
   tipo      String
   ciudad    String
-  createdAt DateTime    @default(now())
-  // CORREGIDO: Se reintroduce el @map para apuntar a la columna 'userid' real
-  userId    String      @db.Uuid @map("userid")
+  createdAt DateTime   @default(now())
+  userId    String     @map("userid") @db.Uuid
   articulos Articulo[]
-  user      User        @relation(fields: [userId], references: [id])
+  user      User       @relation(fields: [userId], references: [id])
 
   @@map("Obra")
 }
 
 model Articulo {
-  id          Int           @id @default(autoincrement()) @map("ID_Producto")
-  nombre      String        @map("Nombre")
-  unidad      String        @map("Unidad")
-  cantidad    Int           @map("Cantidad")
-  obraId      String        @db.Uuid @map("ObraID")
-  obra        Obra          @relation(fields: [obraId], references: [id])
+  id          Int          @id @default(autoincrement()) @map("ID_Producto")
+  nombre      String       @map("Nombre")
+  unidad      String       @map("Unidad")
+  cantidad    Int          @map("Cantidad")
+  obraId      String       @map("ObraID") @db.Uuid
+  obra        Obra         @relation(fields: [obraId], references: [id])
   movimientos Movimiento[]
 
   @@map("Articulos")
 }
 
 model Movimiento {
-  id                Int            @id @default(autoincrement()) @map("ID_transaccion")
-  idProducto        Int            @map("ID_producto")
-  producto          String         @map("Producto")
-  cantidad          Int            @map("Cantidad")
-  tipoMovimiento    TipoMovimiento @map("Tipo_movimiento")
-  fechaTransaccion  DateTime       @default(now()) @map("Fecha_transaccion")
-  obraDestino       String?        @map("Obra_destino")
-  remito            String?        @map("Remito")
-  observacion       String?        @map("Observacion")
-  precio            Decimal        @db.Decimal(10, 2) @map("Precio")
-  tipoUnidad        String         @map("Tipo_unidad")
-  precioTotal       Decimal        @db.Decimal(10, 2) @map("Precio_total_disponible")
-  role              String?        @map("Role")
-  articulo          Articulo       @relation(fields: [idProducto], references: [id])
+  id               Int            @id @default(autoincrement()) @map("ID_transaccion")
+  idProducto       Int            @map("ID_producto")
+  producto         String         @map("Producto")
+  cantidad         Int            @map("Cantidad")
+  tipoMovimiento   TipoMovimiento @map("Tipo_movimiento")
+  fechaTransaccion DateTime       @default(now()) @map("Fecha_transaccion")
+  obraDestino      String?        @map("Obra_destino")
+  remito           String?        @map("Remito")
+  observacion      String?        @map("Observacion")
+  precio           Decimal        @map("Precio") @db.Decimal(10, 2)
+  tipoUnidad       String         @map("Tipo_unidad")
+  precioTotal      Decimal        @map("Precio_total_disponible") @db.Decimal(10, 2)
+  role             String?        @map("Role")
+  articulo         Articulo       @relation(fields: [idProducto], references: [id])
 
   @@index([idProducto])
   @@map("Movimientos")
@@ -98,20 +96,20 @@ model Salario {
 }
 
 model Asistencia {
-  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId        String            @db.Uuid @map("user_id")
-  fecha         DateTime          @db.Date
-  horaEntrada   String?           @map("hora_entrada")
-  horaSalida    String?           @map("hora_salida")
-  horasTotales  String?           @map("horas_totales")
-  horasNormales String?           @map("horas_normales")
-  horasExtra    String?           @map("horas_extra")
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String           @db.Uuid
+  fecha         DateTime         @db.Date
+  horaEntrada   String?
+  horaSalida    String?
+  horasTotales  String?
+  horasNormales String?
+  horasExtra    String?
   observaciones String?
-  estado        EstadoAsistencia  @default(PENDIENTE) @map("estado")
-  createdAt     DateTime          @default(now()) @map("created_at")
-  updatedAt     DateTime          @default(now()) @map("updated_at")
-  createdBy     String?           @db.Uuid @map("created_by")
-  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  estado        EstadoAsistencia @default(PENDIENTE) @map("estado")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @default(now())
+  createdBy     String?          @db.Uuid
+  User          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, fecha])
   @@index([fecha])
@@ -120,17 +118,17 @@ model Asistencia {
 }
 
 model Certificacion {
-  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  obra               String
-  tipoCertificacion  String               @map("tipo_certificacion")
-  fecha              DateTime             @db.Date
-  estado             EstadoCertificacion  @default(PENDIENTE)
-  total              Decimal              @default(0) @db.Decimal(12, 2)
-  createdAt          DateTime             @default(now()) @map("created_at")
-  updatedAt          DateTime             @default(now()) @map("updated_at")
-  createdBy          String?              @db.Uuid @map("created_by")
-  user               User?                @relation(fields: [createdBy], references: [id])
-  items              ItemCertificado[]
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  obra              String
+  tipoCertificacion String              @map("tipo_certificacion")
+  fecha             DateTime            @db.Date
+  estado            EstadoCertificacion @default(PENDIENTE)
+  total             Decimal             @default(0) @db.Decimal(12, 2)
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @default(now()) @map("updated_at")
+  createdBy         String?             @map("created_by") @db.Uuid
+  user              User?               @relation(fields: [createdBy], references: [id])
+  items             ItemCertificado[]
 
   @@index([createdAt])
   @@index([createdBy])
@@ -142,7 +140,7 @@ model Certificacion {
 
 model ItemCertificado {
   id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  certificacionId String        @db.Uuid @map("certificacion_id")
+  certificacionId String        @map("certificacion_id") @db.Uuid
   codigo          String
   descripcion     String
   unidad          String
