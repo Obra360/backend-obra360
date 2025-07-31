@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { authenticate } from '../middlewares/auth.js'; // Agregar import
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -59,19 +60,39 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// GET /api/obras - Obtener todas las obras
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
-    const obras = await prisma.obra.findMany({
-      include: { user: { select: { id: true, firstName: true, lastName: true } } },
-      orderBy: { createdAt: 'desc' }
-    });
-    res.json(obras);
+    // Obtener el usuario autenticado
+    const userRole = req.user?.role;
+    
+    // Aplicar lógica de filtrado según rol
+    if (userRole === 'ADMIN' || userRole === 'SUPERVISOR') {
+      // ADMIN y SUPERVISOR pueden ver todas las obras
+      const obras = await prisma.obra.findMany({
+        include: { 
+          user: { 
+            select: { 
+              id: true, 
+              firstName: true, 
+              lastName: true 
+            } 
+          } 
+        },
+        orderBy: { empresa: 'asc' } // Orden alfabético por empresa
+      });
+      
+      res.json(obras);
+    } else {
+      // OPERARIO u otros roles no ven obras
+      res.json([]);
+    }
+    
   } catch (error) {
     console.error('Error al obtener obras:', error);
     res.status(500).json({ error: 'Error al obtener obras' });
   }
 });
+
 
 // GET /api/obras/:id - Obtener una obra específica
 router.get('/:id', async (req: Request, res: Response): Promise<void> => {

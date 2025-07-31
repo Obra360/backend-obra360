@@ -292,7 +292,7 @@ app.get('/test-asistencia', async (req, res) => {
     const count = await prisma.asistencia.count(); 
     const sample = await prisma.asistencia.findFirst({
       include: {
-        User: { // CORREGIDO: La relación se llama 'user'
+        user: { // CORREGIDO: La relación se llama 'user'
           select: {
             firstName: true,
             lastName: true,
