@@ -170,7 +170,7 @@ app.get("/user", authenticate, async (req, res, next) => {
 app.use("/api/users", authenticate, userRouter);
 app.use('/api/obras', authenticate, obrasRouter);
 app.use('/api/articulos', authenticate, articulosRouter);
-app.use('/api/certificacion', authenticate, certificacionRouter);
+app.use('/api/certificaciones', authenticate, certificacionRouter);
 app.use('/api/movimientos', authenticate, movimientosRouter);
 app.use('/api/salarios', authenticate, salariosRouter);
 app.use('/api/asistencia', authenticate, asistenciaRouter);
