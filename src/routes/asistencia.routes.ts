@@ -83,7 +83,7 @@ router.get("/", authenticate, async (req: AuthenticatedRequest, res: Response): 
     const registros = await prisma.asistencia.findMany({
       where,
       include: {
-        User: { // CORREGIDO: la relación se llama 'user'
+        user: { // CORREGIDO: la relación se llama 'user'
           select: { id: true, firstName: true, lastName: true, email: true }
         }
       },
@@ -93,8 +93,8 @@ router.get("/", authenticate, async (req: AuthenticatedRequest, res: Response): 
     const registrosFormateados = registros.map((registro) => ({
       id: registro.id,
       empleadoId: registro.userId,
-      empleadoNombre: `${registro.User.firstName} ${registro.User.lastName}`, // CORREGIDO: 'user' en minúscula
-      empleadoEmail: registro.User.email, // CORREGIDO: 'user' en minúscula
+      empleadoNombre: `${registro.user.firstName} ${registro.user.lastName}`, // CORREGIDO: 'user' en minúscula
+      empleadoEmail: registro.user.email, // CORREGIDO: 'user' en minúscula
       fecha: registro.fecha.toISOString().split('T')[0],
       horaEntrada: registro.horaEntrada,
       horaSalida: registro.horaSalida,
