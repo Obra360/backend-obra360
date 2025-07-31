@@ -9,27 +9,32 @@ datasource db {
 }
 
 model User {
-  id          String         @id @default(uuid()) @db.Uuid
-  email       String         @unique
-  password    String
-  firstName   String
-  lastName    String
-  role        UserRole       @default(OPERARIO)
-  isActive    Boolean        @default(true)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  obras       Obra[]
-  tokens      RefreshToken[]
-  asistencias asistencias[]
+  id              String           @id @default(uuid()) @db.Uuid
+  email           String           @unique
+  password        String
+  firstName       String
+  lastName        String
+  role            UserRole         @default(OPERARIO)
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  obras           Obra[]
+  tokens          RefreshToken[]
+  asistencias     Asistencia[]
+  certificaciones Certificacion[]
+
+  @@map("User")
 }
 
 model RefreshToken {
   id        String   @id @default(uuid())
   token     String   @unique
-  userId    String   @db.Uuid
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  userId    String   @db.Uuid @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("RefreshToken")
 }
 
 model Obra {
@@ -37,51 +42,44 @@ model Obra {
   empresa   String
   tipo      String
   ciudad    String
-  createdAt DateTime    @default(now())
-  userid    String      @db.Uuid
-  articulos Articulos[]
-  user      User        @relation(fields: [userid], references: [id])
+  createdAt DateTime    @default(now()) @map("created_at")
+  userId    String      @db.Uuid @map("user_id")
+  articulos Articulo[]
+  user      User        @relation(fields: [userId], references: [id])
+
+  @@map("Obra")
 }
 
-model Articulos {
-  ID_Producto Int           @id @default(autoincrement())
-  Nombre      String
-  Unidad      String
-  Cantidad    Int
-  ObraID      String        @db.Uuid
-  Obra        Obra          @relation(fields: [ObraID], references: [id])
-  movimientos Movimientos[]
+model Articulo {
+  id          Int           @id @default(autoincrement()) @map("ID_Producto")
+  nombre      String        @map("Nombre")
+  unidad      String        @map("Unidad")
+  cantidad    Int           @map("Cantidad")
+  obraId      String        @db.Uuid @map("ObraID")
+  obra        Obra          @relation(fields: [obraId], references: [id])
+  movimientos Movimiento[]
+
+  @@map("Articulos")
 }
 
-model Movimientos {
-  ID_transaccion          Int            @id @default(autoincrement())
-  ID_producto             Int
-  Producto                String
-  Cantidad                Int
-  Tipo_movimiento         TipoMovimiento
-  Fecha_transaccion       DateTime       @default(now())
-  Obra_destino            String?
-  Remito                  String?
-  Observacion             String?
-  Precio                  Decimal        @db.Decimal(10, 2)
-  Tipo_unidad             String
-  Precio_total_disponible Decimal        @db.Decimal(10, 2)
-  Role                    String?
-  articulo                Articulos      @relation(fields: [ID_producto], references: [ID_Producto])
+model Movimiento {
+  id                Int            @id @default(autoincrement()) @map("ID_transaccion")
+  idProducto        Int            @map("ID_producto")
+  producto          String         @map("Producto")
+  cantidad          Int            @map("Cantidad")
+  tipoMovimiento    TipoMovimiento @map("Tipo_movimiento")
+  fechaTransaccion  DateTime       @default(now()) @map("Fecha_transaccion")
+  obraDestino       String?        @map("Obra_destino")
+  remito            String?        @map("Remito")
+  observacion       String?        @map("Observacion")
+  precio            Decimal        @db.Decimal(10, 2) @map("Precio")
+  tipoUnidad        String         @map("Tipo_unidad")
+  precioTotal       Decimal        @db.Decimal(10, 2) @map("Precio_total_disponible")
+  role              String?        @map("Role")
+  articulo          Articulo       @relation(fields: [idProducto], references: [id])
 
-  @@index([ID_producto])
-}
-
-model Certificacion {
-  Codigo            Int      @id @default(autoincrement())
-  Tipo_certificaion String
-  Fecha             DateTime
-  Precio            Float
-  Estado            String
-  Obra              Int
-  Cantidad          Int
-  Descripcion       String?
-  Auto_fecha        DateTime @default(now())
+  @@index([idProducto])
+  @@map("Movimientos")
 }
 
 model Salario {
@@ -97,25 +95,64 @@ model Salario {
   @@map("Salarios")
 }
 
-model asistencias {
+model Asistencia {
   id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId        String            @db.Uuid
+  userId        String            @db.Uuid @map("user_id")
   fecha         DateTime          @db.Date
-  horaEntrada   String?
-  horaSalida    String?
-  horasTotales  String?
-  horasNormales String?
-  horasExtra    String?
+  horaEntrada   String?           @map("hora_entrada")
+  horaSalida    String?           @map("hora_salida")
+  horasTotales  String?           @map("horas_totales")
+  horasNormales String?           @map("horas_normales")
+  horasExtra    String?           @map("horas_extra")
   observaciones String?
-  estado        estado_asistencia @default(PENDIENTE)
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @default(now())
-  createdBy     String?           @db.Uuid
-  User          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  estado        EstadoAsistencia  @default(PENDIENTE) @map("estado")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @default(now()) @map("updated_at")
+  createdBy     String?           @db.Uuid @map("created_by")
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, fecha])
   @@index([fecha])
   @@index([userId])
+  @@map("asistencias")
+}
+
+model Certificacion {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  obra               String
+  tipoCertificacion  String               @map("tipo_certificacion")
+  fecha              DateTime             @db.Date
+  estado             EstadoCertificacion  @default(PENDIENTE)
+  total              Decimal              @default(0) @db.Decimal(12, 2)
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @default(now()) @map("updated_at")
+  createdBy          String?              @db.Uuid @map("created_by")
+  user               User?                @relation(fields: [createdBy], references: [id])
+  items              ItemCertificado[]
+
+  @@index([createdAt])
+  @@index([createdBy])
+  @@index([estado])
+  @@index([fecha])
+  @@index([obra])
+  @@map("certificaciones")
+}
+
+model ItemCertificado {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  certificacionId String        @db.Uuid @map("certificacion_id")
+  codigo          String
+  descripcion     String
+  unidad          String
+  cantidad        Decimal       @db.Decimal(10, 3)
+  precio          Decimal       @db.Decimal(10, 2)
+  subtotal        Decimal       @db.Decimal(12, 2)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  certificacion   Certificacion @relation(fields: [certificacionId], references: [id], onDelete: Cascade)
+
+  @@index([certificacionId])
+  @@index([codigo])
+  @@map("items_certificados")
 }
 
 enum UserRole {
@@ -129,9 +166,19 @@ enum TipoMovimiento {
   venta
 }
 
-enum estado_asistencia {
+enum EstadoAsistencia {
   PENDIENTE
   COMPLETO
   EDITADO
   AUSENTE
+
+  @@map("estado_asistencia")
+}
+
+enum EstadoCertificacion {
+  PENDIENTE
+  COMPLETA
+  APROBADA
+  RECHAZADA
+  PAGADA
 }

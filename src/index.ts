@@ -8,8 +8,8 @@ import { PrismaClient, User } from '@prisma/client';
 import { fileURLToPath } from "url";
 import pkg from "jsonwebtoken";
 const { sign, verify } = pkg;
-import { compare, hash } from "bcryptjs";
-import { authenticate, requireAdmin} from "./middlewares/auth.js";
+import { compare } from "bcryptjs";
+import { authenticate } from "./middlewares/auth.js";
 console.log("🟢 authenticate cargado");
 import userRouter from "./routes/user.routes.js";
 import obrasRouter from "./routes/obras.js";
@@ -25,7 +25,8 @@ const PORT = process.env.PORT || 3000;
 
 const allowedOrigins = [
   "https://frontend-obra360.onrender.com",
-  "http://localhost:3000"
+  "http://localhost:3000",
+  "http://127.0.0.1:5500" // Añadido para pruebas locales
 ];
 
 app.use(cors({
@@ -41,7 +42,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json()); 
+app.use(express.json());
 app.options("*", cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -86,8 +87,8 @@ app.post("/users/login", async (req, res) => {
     if (!isPasswordCorrect) throw new Error("Incorrect password");
 
     const { password: _, ...userWithoutPassword } = user;
-    res.json({ 
-      ...userWithoutPassword, 
+    res.json({
+      ...userWithoutPassword,
       token: generateJwt(user),
       message: "Login exitoso"
     });
@@ -101,25 +102,25 @@ app.post("/users/login", async (req, res) => {
 app.get("/auth/verify", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
-    
+
     if (!token) {
       return res.status(401).json({ error: "No token provided" });
     }
-    
+
     const decoded = verify(token, process.env.JWT_SECRET!) as any;
-    
+
     const user = await prisma.user.findUnique({
       where: { id: decoded.id }
     });
-    
+
     if (!user) {
       return res.status(401).json({ error: "User not found" });
     }
-    
+
     const { password: _, ...userWithoutPassword } = user;
-    res.json({ 
-      valid: true, 
-      user: userWithoutPassword 
+    res.json({
+      valid: true,
+      user: userWithoutPassword
     });
   } catch (error) {
     console.error("Error verificando token:", error);
@@ -129,7 +130,7 @@ app.get("/auth/verify", async (req, res) => {
 
 // Health check
 app.get("/health", (req, res) => {
-  res.json({ 
+  res.json({
     status: "ok",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
@@ -144,20 +145,20 @@ app.get("/user", authenticate, async (req, res, next) => {
   try {
     const user = (req as any).user;
     if (!user) return res.sendStatus(401);
-    
+
     // Obtener datos actualizados del usuario
     const currentUser = await prisma.user.findUnique({
       where: { id: user.id }
     });
-    
+
     if (!currentUser) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
-    
+
     const { password: _, ...userWithoutPassword } = currentUser;
-    res.json({ 
-      ...userWithoutPassword, 
-      token: generateJwt(currentUser) 
+    res.json({
+      ...userWithoutPassword,
+      token: generateJwt(currentUser)
     });
   } catch (err) {
     console.error("Error obteniendo usuario:", err);
@@ -177,8 +178,8 @@ app.use('/api/asistencia', authenticate, asistenciaRouter);
 // ==================== FUNCIONES AUXILIARES ====================
 
 function generateJwt(user: User): string {
-  return sign({ 
-    id: user.id, 
+  return sign({
+    id: user.id,
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
@@ -192,9 +193,8 @@ function generateJwt(user: User): string {
 
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {
-  // No mostrar error 404 para archivos estáticos del frontend
   if (req.originalUrl.startsWith('/api/')) {
-    res.status(404).json({ 
+    res.status(404).json({
       error: 'Ruta de API no encontrada',
       message: `La ruta ${req.method} ${req.originalUrl} no existe`,
       availableRoutes: [
@@ -202,11 +202,10 @@ app.use('*', (req, res) => {
         'GET /auth/verify',
         'GET /user',
         'GET /health',
-        'API Routes: /api/obras, /api/users, /api/articulos, /api/asistencia, etc.'
+        'API Routes: /api/obras, /api/users, /api/articulos, /api/certificaciones, /api/asistencia, etc.'
       ]
     });
   } else {
-    // Para rutas del frontend, servir index.html (SPA routing)
     res.sendFile(path.join(frontendPath, "index.html"));
   }
 });
@@ -214,10 +213,7 @@ app.use('*', (req, res) => {
 // Manejo global de errores
 app.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error no manejado:', error);
-  
-  // No enviar stack trace en producción
   const isDevelopment = process.env.NODE_ENV === 'development';
-  
   res.status(500).json({
     error: 'Error interno del servidor',
     message: isDevelopment ? error.message : 'Algo salió mal',
@@ -229,7 +225,6 @@ app.use((error: Error, req: express.Request, res: express.Response, next: expres
 process.on("uncaughtException", (err) => {
   console.error("❌ Uncaught Exception:");
   console.error(err instanceof Error ? err.stack : err);
-  // En producción, considera hacer graceful shutdown
   if (process.env.NODE_ENV === 'production') {
     process.exit(1);
   }
@@ -238,7 +233,6 @@ process.on("uncaughtException", (err) => {
 process.on("unhandledRejection", (reason) => {
   console.error("❌ Unhandled Rejection:");
   console.error(reason instanceof Error ? reason.stack : reason);
-  // En producción, considera hacer graceful shutdown
   if (process.env.NODE_ENV === 'production') {
     process.exit(1);
   }
@@ -250,31 +244,18 @@ app.listen(PORT, () => {
   console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
   console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Frontend Path: ${frontendPath}`);
-  
-  // Mostrar rutas disponibles en desarrollo
-  if (process.env.NODE_ENV === 'development') {
-    console.log('\n📋 Rutas disponibles:');
-    console.log('   POST /users/login');
-    console.log('   GET  /auth/verify');
-    console.log('   GET  /user (auth required)');
-    console.log('   GET  /health');
-    console.log('   API  /api/obras (auth required)');
-    console.log('   API  /api/users (auth required)');
-    console.log('   API  /api/articulos (auth required)');
-    console.log('   API  /api/certificacion (auth required)');
-    console.log('   API  /api/movimientos (auth required)');
-    console.log('   API  /api/salarios (auth required)');
-    console.log('   API  /api/asistencia (auth required) ✨ NUEVO');
-  }
 });
 
-// Test de asistencia (mejorado)
-app.get('/test-asistencia', async (req, res) => {
+// ==================== RUTAS DE TEST ====================
+
+// Test de certificaciones (corregido)
+app.get('/test-certificaciones', async (req, res) => {
   try {
-    const count = await prisma.asistencias.count();
-    const sample = await prisma.asistencias.findFirst({
+    const count = await prisma.certificacion.count();
+    const sample = await prisma.certificacion.findFirst({
       include: {
-        User: {
+        items: true,
+        user: { // CORREGIDO: la relación se llama 'user'
           select: {
             firstName: true,
             lastName: true,
@@ -283,20 +264,57 @@ app.get('/test-asistencia', async (req, res) => {
         }
       }
     });
-    
-    res.json({ 
-      message: '✅ Asistencia funciona correctamente!', 
+
+    res.json({
+      message: '✅ Certificaciones funciona correctamente!',
       totalRegistros: count,
       ejemploRegistro: sample,
       schemaInfo: {
-        modelo: 'asistencias',
+        modelo: 'Certificacion',
+        itemsModelo: 'ItemCertificado',
         relacion: 'User',
-        enums: ['estado_asistencia', 'UserRole']
+        enums: ['EstadoCertificacion', 'UserRole']
+      }
+    });
+  } catch (error) {
+    console.error('Error en test-certificaciones:', error);
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Error desconocido',
+      message: '❌ Error probando tabla certificaciones'
+    });
+  }
+});
+
+// Test de asistencia (corregido)
+app.get('/test-asistencia', async (req, res) => {
+  try {
+    // CORREGIDO: El modelo es 'asistencia' (singular)
+    const count = await prisma.asistencia.count(); 
+    const sample = await prisma.asistencia.findFirst({
+      include: {
+        user: { // CORREGIDO: La relación se llama 'user'
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    res.json({
+      message: '✅ Asistencia funciona correctamente!',
+      totalRegistros: count,
+      ejemploRegistro: sample,
+      schemaInfo: {
+        modelo: 'Asistencia',
+        relacion: 'User',
+        enums: ['EstadoAsistencia', 'UserRole']
       }
     });
   } catch (error) {
     console.error('Error en test-asistencia:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: error instanceof Error ? error.message : 'Error desconocido',
       message: '❌ Error probando tabla asistencias'
     });
