@@ -109,7 +109,7 @@ model Asistencia {
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @default(now())
   createdBy     String?          @db.Uuid
-  User          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, fecha])
   @@index([fecha])
