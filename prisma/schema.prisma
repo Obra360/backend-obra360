@@ -43,8 +43,10 @@ model Obra {
   empresa   String
   tipo      String
   ciudad    String
-  createdAt DateTime    @default(now()) @map("created_at")
-  userId    String      @db.Uuid @map("user_id")
+  // CORREGIDO: Se quita el @map para que coincida con la DB real
+  createdAt DateTime    @default(now())
+  // CORREGIDO: Se quita el @map y se asegura que sea camelCase
+  userId    String      @db.Uuid
   articulos Articulo[]
   user      User        @relation(fields: [userId], references: [id])
 
