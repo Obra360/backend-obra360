@@ -16,8 +16,8 @@ model User {
   lastName        String
   role            UserRole         @default(OPERARIO)
   isActive        Boolean          @default(true)
-  createdAt       DateTime         @default(now()) @map("created_at")
-  updatedAt       DateTime         @updatedAt @map("updated_at")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   obras           Obra[]
   tokens          RefreshToken[]
   asistencias     Asistencia[]
@@ -25,6 +25,7 @@ model User {
 
   @@map("User")
 }
+
 
 model RefreshToken {
   id        String   @id @default(uuid())
