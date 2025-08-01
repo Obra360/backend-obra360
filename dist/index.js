@@ -16,12 +16,14 @@ import articulosRouter from './routes/articulos.routes.js';
 import salariosRouter from './routes/salarios.routes.js';
 import certificacionRouter from './routes/certificacion.routes.js';
 import movimientosRouter from './routes/movimientos.routes.js';
+import asistenciaRouter from './routes/asistencia.routes.js';
 const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const allowedOrigins = [
     "https://frontend-obra360.onrender.com",
-    "http://localhost:3000"
+    "http://localhost:3000",
+    "http://127.0.0.1:5500"
 ];
 app.use(cors({
     origin: function (origin, callback) {
@@ -143,9 +145,10 @@ app.get("/user", authenticate, async (req, res, next) => {
 app.use("/api/users", authenticate, userRouter);
 app.use('/api/obras', authenticate, obrasRouter);
 app.use('/api/articulos', authenticate, articulosRouter);
-app.use('/api/certificacion', authenticate, certificacionRouter);
+app.use('/api/certificaciones', authenticate, certificacionRouter);
 app.use('/api/movimientos', authenticate, movimientosRouter);
 app.use('/api/salarios', authenticate, salariosRouter);
+app.use('/api/asistencia', authenticate, asistenciaRouter);
 function generateJwt(user) {
     return sign({
         id: user.id,
@@ -167,7 +170,7 @@ app.use('*', (req, res) => {
                 'GET /auth/verify',
                 'GET /user',
                 'GET /health',
-                'API Routes: /api/obras, /api/users, /api/articulos, etc.'
+                'API Routes: /api/obras, /api/users, /api/articulos, /api/certificaciones, /api/asistencia, etc.'
             ]
         });
     }
@@ -203,18 +206,38 @@ app.listen(PORT, () => {
     console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
     console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🔗 Frontend Path: ${frontendPath}`);
-    if (process.env.NODE_ENV === 'development') {
-        console.log('\n📋 Rutas disponibles:');
-        console.log('   POST /users/login');
-        console.log('   GET  /auth/verify');
-        console.log('   GET  /user (auth required)');
-        console.log('   GET  /health');
-        console.log('   API  /api/obras (auth required)');
-        console.log('   API  /api/users (auth required)');
-        console.log('   API  /api/articulos (auth required)');
-        console.log('   API  /api/certificacion (auth required)');
-        console.log('   API  /api/movimientos (auth required)');
-        console.log('   API  /api/salarios (auth required)');
+});
+app.get('/test-asistencia', async (req, res) => {
+    try {
+        const count = await prisma.asistencia.count();
+        const sample = await prisma.asistencia.findFirst({
+            include: {
+                User: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        email: true
+                    }
+                }
+            }
+        });
+        res.json({
+            message: '✅ Asistencia funciona correctamente!',
+            totalRegistros: count,
+            ejemploRegistro: sample,
+            schemaInfo: {
+                modelo: 'Asistencia',
+                relacion: 'User',
+                enums: ['EstadoAsistencia', 'UserRole']
+            }
+        });
+    }
+    catch (error) {
+        console.error('Error en test-asistencia:', error);
+        res.status(500).json({
+            error: error instanceof Error ? error.message : 'Error desconocido',
+            message: '❌ Error probando tabla asistencias'
+        });
     }
 });
 //# sourceMappingURL=index.js.map
