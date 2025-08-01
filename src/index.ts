@@ -25,7 +25,8 @@ const PORT = process.env.PORT || 3000;
 
 const allowedOrigins = [
   "https://frontend-obra360.onrender.com",
-  "http://localhost:3000"
+  "http://localhost:3000",
+  "http://localhost:8080"
 ];
 
 app.use(cors({
