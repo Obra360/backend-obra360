@@ -17,13 +17,15 @@ import salariosRouter from './routes/salarios.routes.js';
 import certificacionRouter from './routes/certificacion.routes.js';
 import movimientosRouter from './routes/movimientos.routes.js';
 import asistenciaRouter from './routes/asistencia.routes.js';
+import materialesRouter from './routes/materiales.routes.js';
 const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const allowedOrigins = [
     "https://frontend-obra360.onrender.com",
     "http://localhost:3000",
-    "http://127.0.0.1:5500"
+    "http://127.0.0.1:5500",
+    "http://localhost:8080"
 ];
 app.use(cors({
     origin: function (origin, callback) {
@@ -149,6 +151,7 @@ app.use('/api/certificaciones', authenticate, certificacionRouter);
 app.use('/api/movimientos', authenticate, movimientosRouter);
 app.use('/api/salarios', authenticate, salariosRouter);
 app.use('/api/asistencia', authenticate, asistenciaRouter);
+app.use('/api/materiales', authenticate, materialesRouter);
 function generateJwt(user) {
     return sign({
         id: user.id,
@@ -170,7 +173,7 @@ app.use('*', (req, res) => {
                 'GET /auth/verify',
                 'GET /user',
                 'GET /health',
-                'API Routes: /api/obras, /api/users, /api/articulos, /api/certificaciones, /api/asistencia, etc.'
+                'API Routes: /api/obras, /api/users, /api/articulos, /api/certificaciones, /api/asistencia, /api/materiales, etc.'
             ]
         });
     }
@@ -206,38 +209,5 @@ app.listen(PORT, () => {
     console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
     console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🔗 Frontend Path: ${frontendPath}`);
-});
-app.get('/test-asistencia', async (req, res) => {
-    try {
-        const count = await prisma.asistencia.count();
-        const sample = await prisma.asistencia.findFirst({
-            include: {
-                User: {
-                    select: {
-                        firstName: true,
-                        lastName: true,
-                        email: true
-                    }
-                }
-            }
-        });
-        res.json({
-            message: '✅ Asistencia funciona correctamente!',
-            totalRegistros: count,
-            ejemploRegistro: sample,
-            schemaInfo: {
-                modelo: 'Asistencia',
-                relacion: 'User',
-                enums: ['EstadoAsistencia', 'UserRole']
-            }
-        });
-    }
-    catch (error) {
-        console.error('Error en test-asistencia:', error);
-        res.status(500).json({
-            error: error instanceof Error ? error.message : 'Error desconocido',
-            message: '❌ Error probando tabla asistencias'
-        });
-    }
 });
 //# sourceMappingURL=index.js.map

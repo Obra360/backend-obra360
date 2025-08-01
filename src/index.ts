@@ -18,6 +18,7 @@ import salariosRouter from './routes/salarios.routes.js';
 import certificacionRouter from './routes/certificacion.routes.js';
 import movimientosRouter from './routes/movimientos.routes.js';
 import asistenciaRouter from './routes/asistencia.routes.js';
+import materialesRouter from './routes/materiales.routes.js';
 
 const prisma = new PrismaClient();
 const app = express();
@@ -175,6 +176,7 @@ app.use('/api/certificaciones', authenticate, certificacionRouter);
 app.use('/api/movimientos', authenticate, movimientosRouter);
 app.use('/api/salarios', authenticate, salariosRouter);
 app.use('/api/asistencia', authenticate, asistenciaRouter);
+app.use('/api/materiales', authenticate, materialesRouter);
 
 // ==================== FUNCIONES AUXILIARES ====================
 
@@ -203,7 +205,7 @@ app.use('*', (req, res) => {
         'GET /auth/verify',
         'GET /user',
         'GET /health',
-        'API Routes: /api/obras, /api/users, /api/articulos, /api/certificaciones, /api/asistencia, etc.'
+        'API Routes: /api/obras, /api/users, /api/articulos, /api/certificaciones, /api/asistencia, /api/materiales, etc.'
       ]
     });
   } else {
@@ -286,38 +288,38 @@ app.listen(PORT, () => {
 //   }
 // });
 
-// Test de asistencia (corregido)
-app.get('/test-asistencia', async (req, res) => {
-  try {
-    // CORREGIDO: El modelo es 'asistencia' (singular)
-    const count = await prisma.asistencia.count(); 
-    const sample = await prisma.asistencia.findFirst({
-      include: {
-        user: { // CORREGIDO: La relación se llama 'user'
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        }
-      }
-    });
+// // Test de asistencia (corregido)
+// app.get('/test-asistencia', async (req, res) => {
+//   try {
+//     // CORREGIDO: El modelo es 'asistencia' (singular)
+//     const count = await prisma.asistencia.count(); 
+//     const sample = await prisma.asistencia.findFirst({
+//       include: {
+//         user: { // CORREGIDO: La relación se llama 'user'
+//           select: {
+//             firstName: true,
+//             lastName: true,
+//             email: true
+//           }
+//         }
+//       }
+//     });
 
-    res.json({
-      message: '✅ Asistencia funciona correctamente!',
-      totalRegistros: count,
-      ejemploRegistro: sample,
-      schemaInfo: {
-        modelo: 'Asistencia',
-        relacion: 'User',
-        enums: ['EstadoAsistencia', 'UserRole']
-      }
-    });
-  } catch (error) {
-    console.error('Error en test-asistencia:', error);
-    res.status(500).json({
-      error: error instanceof Error ? error.message : 'Error desconocido',
-      message: '❌ Error probando tabla asistencias'
-    });
-  }
-});
+//     res.json({
+//       message: '✅ Asistencia funciona correctamente!',
+//       totalRegistros: count,
+//       ejemploRegistro: sample,
+//       schemaInfo: {
+//         modelo: 'Asistencia',
+//         relacion: 'User',
+//         enums: ['EstadoAsistencia', 'UserRole']
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Error en test-asistencia:', error);
+//     res.status(500).json({
+//       error: error instanceof Error ? error.message : 'Error desconocido',
+//       message: '❌ Error probando tabla asistencias'
+//     });
+//   }
+// });

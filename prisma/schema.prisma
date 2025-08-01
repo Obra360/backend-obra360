@@ -38,14 +38,15 @@ model RefreshToken {
 }
 
 model Obra {
-  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  empresa   String
-  tipo      String
-  ciudad    String
-  createdAt DateTime   @default(now())
-  userId    String     @map("userid") @db.Uuid
-  articulos Articulo[]
-  user      User       @relation(fields: [userId], references: [id])
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  empresa    String
+  tipo       String
+  ciudad     String
+  createdAt  DateTime     @default(now())
+  userId     String       @map("userid") @db.Uuid
+  articulos  Articulo[]
+  user       User         @relation(fields: [userId], references: [id])
+  materiales materiales[]
 
   @@map("Obra")
 }
@@ -153,6 +154,26 @@ model ItemCertificado {
   @@index([certificacionId])
   @@index([codigo])
   @@map("items_certificados")
+}
+
+model materiales {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  codigo_interno String    @unique @db.VarChar(10)
+  nombre         String    @db.VarChar(255)
+  unidad         String    @db.VarChar(50)
+  cantidad       Decimal   @default(0) @db.Decimal(10, 3)
+  precio         Decimal?  @db.Decimal(10, 2)
+  precio_total   Decimal?  @db.Decimal(12, 2)
+  remito         String?   @db.VarChar(100)
+  fecha_ingreso  DateTime? @default(now()) @db.Timestamptz(6)
+  obra_id        String    @db.Uuid
+  created_at     DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime? @default(now()) @db.Timestamptz(6)
+  Obra           Obra      @relation(fields: [obra_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([codigo_interno], map: "idx_materiales_codigo_interno")
+  @@index([created_at], map: "idx_materiales_created_at")
+  @@index([obra_id], map: "idx_materiales_obra_id")
 }
 
 enum UserRole {
