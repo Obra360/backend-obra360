@@ -17,7 +17,7 @@ import articulosRouter from './routes/articulos.routes.js';
 import salariosRouter from './routes/salarios.routes.js';
 import certificacionRouter from './routes/certificacion.routes.js';
 import movimientosRouter from './routes/movimientos.routes.js';
-import asistenciaRouter from './routes/asistencia.routes.js';
+import controlHorasRouter from './routes/control-horas.routes.js';
 import materialesRouter from './routes/materiales.routes.js';
 
 const prisma = new PrismaClient();
@@ -175,7 +175,7 @@ app.use('/api/articulos', authenticate, articulosRouter);
 app.use('/api/certificaciones', authenticate, certificacionRouter);
 app.use('/api/movimientos', authenticate, movimientosRouter);
 app.use('/api/salarios', authenticate, salariosRouter);
-app.use('/api/asistencia', authenticate, asistenciaRouter);
+app.use('/api/control-horas', authenticate, controlHorasRouter);
 app.use('/api/materiales', authenticate, materialesRouter);
 
 // ==================== FUNCIONES AUXILIARES ====================

@@ -20,7 +20,7 @@ model User {
   updatedAt       DateTime        @updatedAt
   obras           Obra[]
   RefreshToken    RefreshToken[]
-  asistencias     Asistencia[]
+  controlHorasCreadas ControlHoras[]
   certificaciones Certificacion[]
 
   @@map("User")
@@ -96,26 +96,38 @@ model Salario {
   @@map("Salarios")
 }
 
-model Asistencia {
-  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId        String           @db.Uuid
-  fecha         DateTime         @db.Date
-  horaEntrada   String?
-  horaSalida    String?
-  horasTotales  String?
-  horasNormales String?
-  horasExtra    String?
-  observaciones String?
-  estado        EstadoAsistencia @default(PENDIENTE) @map("estado")
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @default(now())
-  createdBy     String?          @db.Uuid
-  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+model PersonaControlHoras {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nombre        String         @db.VarChar(100)
+  apellido      String         @db.VarChar(100)
+  dni           String         @unique @db.VarChar(20)
+  activo        Boolean        @default(true)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @default(now()) @updatedAt @map("updated_at")
+  controlHoras  ControlHoras[]
 
-  @@unique([userId, fecha])
+  @@map("personas_control_horas")
+}
+
+model ControlHoras {
+  id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  personaId     String              @map("persona_id") @db.Uuid
+  fecha         DateTime            @db.Date
+  horaEntrada   DateTime?           @map("hora_entrada") @db.Time
+  horaSalida    DateTime?           @map("hora_salida") @db.Time
+  horasExtra    Decimal             @default(0) @map("horas_extra") @db.Decimal(4, 2)
+  observaciones String?
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @default(now()) @updatedAt @map("updated_at")
+  createdBy     String?             @map("created_by") @db.Uuid
+  
+  persona       PersonaControlHoras @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  user          User?               @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@unique([personaId, fecha], name: "unique_persona_fecha")
   @@index([fecha])
-  @@index([userId])
-  @@map("asistencias")
+  @@index([personaId])
+  @@map("control_horas")
 }
 
 model Certificacion {
