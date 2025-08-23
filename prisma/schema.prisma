@@ -20,8 +20,8 @@ model User {
   updatedAt       DateTime        @updatedAt
   obras           Obra[]
   RefreshToken    RefreshToken[]
-  controlHorasCreadas ControlHoras[]
-  certificaciones Certificacion[]
+  controlHorasCreadas ControlHoras[] @relation("CreatedBy")
+  certificaciones Certificacion[] 
 
   @@map("User")
 }
@@ -122,7 +122,7 @@ model ControlHoras {
   createdBy     String?             @map("created_by") @db.Uuid
   
   persona       PersonaControlHoras @relation(fields: [personaId], references: [id], onDelete: Cascade)
-  user          User?               @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  user          User?               @relation("CreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
 
   @@unique([personaId, fecha], name: "unique_persona_fecha")
   @@index([fecha])

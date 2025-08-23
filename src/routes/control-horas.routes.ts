@@ -1,13 +1,24 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 const router = Router();
 
+// Tipo para request con usuario autenticado
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  }
+}
+
 // ==================== PERSONAS ====================
 
 // Obtener todas las personas
-router.get('/personas', async (req, res) => {
+router.get('/personas', async (req: Request, res: Response) => {
   try {
     const personas = await prisma.personaControlHoras.findMany({
       where: { activo: true },
@@ -25,7 +36,7 @@ router.get('/personas', async (req, res) => {
 });
 
 // Crear nueva persona
-router.post('/personas', async (req, res) => {
+router.post('/personas', async (req: Request, res: Response) => {
   const { nombre, apellido, dni } = req.body;
   
   // Validaciones
@@ -63,7 +74,7 @@ router.post('/personas', async (req, res) => {
 });
 
 // Actualizar persona
-router.put('/personas/:id', async (req, res) => {
+router.put('/personas/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const { nombre, apellido, dni, activo } = req.body;
   
@@ -99,7 +110,7 @@ router.put('/personas/:id', async (req, res) => {
 // ==================== CONTROL DE HORAS ====================
 
 // Obtener registros de control de horas
-router.get('/registros', async (req, res) => {
+router.get('/registros', async (req: Request, res: Response) => {
   const { fechaDesde, fechaHasta, personaId } = req.query;
   
   try {
@@ -119,8 +130,8 @@ router.get('/registros', async (req, res) => {
     const registros = await prisma.controlHoras.findMany({
       where,
       include: {
-        persona: true,
-        user: {
+        persona: true,  // Usar el nombre de la relación, no de la tabla
+        user: {         // Usar 'user' en minúsculas
           select: {
             email: true,
             firstName: true,
@@ -135,15 +146,15 @@ router.get('/registros', async (req, res) => {
     });
     
     // Formatear respuesta
-    const registrosFormateados = registros.map(registro => ({
+    const registrosFormateados = registros.map((registro: any) => ({
       id: registro.id,
       personaId: registro.personaId,
       nombre: registro.persona.nombre,
       apellido: registro.persona.apellido,
       dni: registro.persona.dni,
       fecha: registro.fecha.toISOString().split('T')[0],
-      horaEntrada: registro.horaEntrada,
-      horaSalida: registro.horaSalida,
+      horaEntrada: registro.horaEntrada ? formatTime(registro.horaEntrada) : null,
+      horaSalida: registro.horaSalida ? formatTime(registro.horaSalida) : null,
       horasExtra: registro.horasExtra?.toString() || '0',
       observaciones: registro.observaciones,
       registradoPor: registro.user ? `${registro.user.firstName} ${registro.user.lastName}` : null
@@ -157,7 +168,7 @@ router.get('/registros', async (req, res) => {
 });
 
 // Registrar entrada/salida
-router.post('/marcar', async (req: any, res) => {
+router.post('/marcar', async (req: AuthRequest, res: Response) => {
   const { personaId, tipo, fecha, hora, esHoraExtra } = req.body;
   const userId = req.user?.id; // Usuario autenticado
   
@@ -189,13 +200,11 @@ router.post('/marcar', async (req: any, res) => {
     const fechaDate = new Date(fecha);
     fechaDate.setHours(0, 0, 0, 0);
     
-    // Buscar o crear registro del día
-    let registro = await prisma.controlHoras.findUnique({
+    // Buscar registro existente del día
+    let registro = await prisma.controlHoras.findFirst({
       where: {
-        unique_persona_fecha: {
-          personaId: personaId,
-          fecha: fechaDate
-        }
+        personaId: personaId,
+        fecha: fechaDate
       }
     });
     
@@ -203,22 +212,22 @@ router.post('/marcar', async (req: any, res) => {
       createdBy: userId
     };
     
+    // Convertir hora string a Date para PostgreSQL TIME
+    const horaDate = new Date(`2000-01-01T${hora}:00`);
+    
     if (tipo === 'entrada') {
-      updateData.horaEntrada = hora;
+      updateData.horaEntrada = horaDate;
     } else {
-      updateData.horaSalida = hora;
+      updateData.horaSalida = horaDate;
       
       // Si se marca como hora extra y ya tiene entrada
       if (esHoraExtra && registro?.horaEntrada) {
-        // Convertir horaEntrada a string si es Date
-        let horaEntradaStr = typeof registro.horaEntrada === 'string'
-          ? registro.horaEntrada
-          : registro.horaEntrada instanceof Date
-            ? registro.horaEntrada.toTimeString().slice(0,5)
-            : '';
-        const [horaE, minE] = horaEntradaStr.split(':').map(Number);
-        const [horaS, minS] = hora.split(':').map(Number);
-        let totalMinutos = (horaS * 60 + minS) - (horaE * 60 + minE);
+        const entrada = new Date(registro.horaEntrada);
+        const salida = new Date(`2000-01-01T${hora}:00`);
+        
+        let totalMinutos = (salida.getHours() * 60 + salida.getMinutes()) - 
+                          (entrada.getHours() * 60 + entrada.getMinutes());
+        
         if (totalMinutos < 0) totalMinutos += 24 * 60;
         
         // Si trabaja más de 8 horas, calcular extra
@@ -239,7 +248,7 @@ router.post('/marcar', async (req: any, res) => {
       // Crear nuevo registro
       registro = await prisma.controlHoras.create({
         data: {
-          personaId,
+          personaId: personaId,
           fecha: fechaDate,
           ...updateData
         },
@@ -258,17 +267,25 @@ router.post('/marcar', async (req: any, res) => {
 });
 
 // Actualizar registro
-router.put('/registros/:id', async (req, res) => {
+router.put('/registros/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const { horaEntrada, horaSalida, horasExtra, observaciones } = req.body;
   
   try {
     const updateData: any = {};
     
-    if (horaEntrada !== undefined) updateData.horaEntrada = horaEntrada || null;
-    if (horaSalida !== undefined) updateData.horaSalida = horaSalida || null;
-    if (horasExtra !== undefined) updateData.horasExtra = parseFloat(horasExtra) || 0;
-    if (observaciones !== undefined) updateData.observaciones = observaciones;
+    if (horaEntrada !== undefined) {
+      updateData.horaEntrada = horaEntrada ? new Date(`2000-01-01T${horaEntrada}:00`) : null;
+    }
+    if (horaSalida !== undefined) {
+      updateData.horaSalida = horaSalida ? new Date(`2000-01-01T${horaSalida}:00`) : null;
+    }
+    if (horasExtra !== undefined) {
+      updateData.horasExtra = parseFloat(horasExtra) || 0;
+    }
+    if (observaciones !== undefined) {
+      updateData.observaciones = observaciones;
+    }
     
     const registro = await prisma.controlHoras.update({
       where: { id },
@@ -294,7 +311,7 @@ router.put('/registros/:id', async (req, res) => {
 });
 
 // Eliminar registro
-router.delete('/registros/:id', async (req, res) => {
+router.delete('/registros/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   
   try {
@@ -319,7 +336,7 @@ router.delete('/registros/:id', async (req, res) => {
 });
 
 // Obtener resumen del día
-router.get('/resumen/:fecha', async (req, res) => {
+router.get('/resumen/:fecha', async (req: Request, res: Response) => {
   const { fecha } = req.params;
   
   try {
@@ -331,27 +348,20 @@ router.get('/resumen/:fecha', async (req, res) => {
     });
     
     const personasPresentes = new Set(
-      registros.filter(r => r.horaEntrada).map(r => r.personaId)
+      registros.filter((r: any) => r.horaEntrada).map((r: any) => r.personaId)
     ).size;
     
     let totalMinutosTrabajados = 0;
     let totalHorasExtra = 0;
     
-    registros.forEach(registro => {
+    registros.forEach((registro: any) => {
       if (registro.horaEntrada && registro.horaSalida) {
-        const horaEntradaStr = typeof registro.horaEntrada === 'string'
-          ? registro.horaEntrada
-          : registro.horaEntrada instanceof Date
-            ? registro.horaEntrada.toTimeString().slice(0,5)
-            : '';
-        const horaSalidaStr = typeof registro.horaSalida === 'string'
-          ? registro.horaSalida
-          : registro.horaSalida instanceof Date
-            ? registro.horaSalida.toTimeString().slice(0,5)
-            : '';
-        const [horaE, minE] = horaEntradaStr.split(':').map(Number);
-        const [horaS, minS] = horaSalidaStr.split(':').map(Number);
-        let minutos = (horaS * 60 + minS) - (horaE * 60 + minE);
+        const entrada = new Date(registro.horaEntrada);
+        const salida = new Date(registro.horaSalida);
+        
+        let minutos = (salida.getHours() * 60 + salida.getMinutes()) - 
+                     (entrada.getHours() * 60 + entrada.getMinutes());
+        
         if (minutos < 0) minutos += 24 * 60;
         totalMinutosTrabajados += minutos;
       }
@@ -373,7 +383,7 @@ router.get('/resumen/:fecha', async (req, res) => {
 });
 
 // Exportar a Excel
-router.get('/exportar', async (req, res) => {
+router.get('/exportar', async (req: Request, res: Response) => {
   const { fechaDesde, fechaHasta, personaId } = req.query;
   
   try {
@@ -391,43 +401,41 @@ router.get('/exportar', async (req, res) => {
     
     const registros = await prisma.controlHoras.findMany({
       where,
-      include: { persona: true },
-      orderBy: [{ fecha: 'desc' }, { persona: { apellido: 'asc' } }]
+      include: { persona: true },  // Usar el nombre de la relación
+      orderBy: [
+        { fecha: 'desc' }, 
+        { persona: { apellido: 'asc' } }
+      ]
     });
     
     // Generar CSV
     let csv = 'Fecha,DNI,Apellido,Nombre,Entrada,Salida,Horas Trabajadas,Horas Extra,Observaciones\n';
     
-    registros.forEach(registro => {
+    registros.forEach((registro: any) => {
       let horasTrabajadas = '0:00';
       
       if (registro.horaEntrada && registro.horaSalida) {
-        // Convertir a string si es Date
-        const horaEntradaStr = typeof registro.horaEntrada === 'string'
-          ? registro.horaEntrada
-          : registro.horaEntrada instanceof Date
-            ? registro.horaEntrada.toTimeString().slice(0,5)
-            : '';
-        const horaSalidaStr = typeof registro.horaSalida === 'string'
-          ? registro.horaSalida
-          : registro.horaSalida instanceof Date
-            ? registro.horaSalida.toTimeString().slice(0,5)
-            : '';
-        const [horaE, minE] = horaEntradaStr.split(':').map(Number);
-        const [horaS, minS] = horaSalidaStr.split(':').map(Number);
-        let totalMinutos = (horaS * 60 + minS) - (horaE * 60 + minE);
+        const entrada = new Date(registro.horaEntrada);
+        const salida = new Date(registro.horaSalida);
+        
+        let totalMinutos = (salida.getHours() * 60 + salida.getMinutes()) - 
+                          (entrada.getHours() * 60 + entrada.getMinutes());
+        
         if (totalMinutos < 0) totalMinutos += 24 * 60;
         horasTrabajadas = `${Math.floor(totalMinutos / 60)}:${(totalMinutos % 60).toString().padStart(2, '0')}`;
       }
+      
+      const horaEntrada = registro.horaEntrada ? formatTime(registro.horaEntrada) : '-';
+      const horaSalida = registro.horaSalida ? formatTime(registro.horaSalida) : '-';
       
       csv += `${registro.fecha.toLocaleDateString('es-AR')},`;
       csv += `${registro.persona.dni},`;
       csv += `${registro.persona.apellido},`;
       csv += `${registro.persona.nombre},`;
-      csv += `${registro.horaEntrada || '-'},`;
-      csv += `${registro.horaSalida || '-'},`;
+      csv += `${horaEntrada},`;
+      csv += `${horaSalida},`;
       csv += `${horasTrabajadas},`;
-      csv += `${registro.horasExtra}h,`;
+      csv += `${registro.horasExtra || 0}h,`;
       csv += `${registro.observaciones || ''}\n`;
     });
     
@@ -441,7 +449,7 @@ router.get('/exportar', async (req, res) => {
 });
 
 // Test endpoint
-router.get('/test', async (req, res) => {
+router.get('/test', async (req: Request, res: Response) => {
   try {
     const personasCount = await prisma.personaControlHoras.count();
     const registrosCount = await prisma.controlHoras.count();
@@ -471,5 +479,31 @@ router.get('/test', async (req, res) => {
     });
   }
 });
+
+// Función auxiliar para formatear tiempo
+function formatTime(date: Date | string | any): string {
+  if (!date) return '-';
+  
+  // Si es un objeto Date
+  if (date instanceof Date) {
+    return date.toTimeString().slice(0, 5);
+  }
+  
+  // Si ya es un string con formato de hora
+  if (typeof date === 'string') {
+    // Si tiene formato de hora (HH:MM o HH:MM:SS)
+    if (date.includes(':')) {
+      return date.slice(0, 5);
+    }
+    
+    // Intentar parsearlo como fecha
+    const dateObj = new Date(date);
+    if (!isNaN(dateObj.getTime())) {
+      return dateObj.toTimeString().slice(0, 5);
+    }
+  }
+  
+  return '-';
+}
 
 export default router;
