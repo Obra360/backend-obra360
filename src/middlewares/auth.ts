@@ -3,26 +3,6 @@ import { Request, Response, NextFunction } from "express";
 import pkg from "jsonwebtoken";
 const { verify } = pkg;
 
-// Interface para el usuario decodificado del JWT
-interface DecodedUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  iat?: number;
-  exp?: number;
-}
-
-// Extender Request para incluir user tipado
-declare global {
-  namespace Express {
-    interface Request {
-      user?: DecodedUser;
-    }
-  }
-}
-
 export const authenticate = async (
   req: Request,
   res: Response,
@@ -46,8 +26,8 @@ export const authenticate = async (
     return;
   }
 
-  try {
-    const decoded = verify(token, process.env.JWT_SECRET) as DecodedUser;
+   try {
+    const decoded = verify(token, process.env.JWT_SECRET) as Express.Request['user'];
     req.user = decoded;
     next();
   } catch (err: any) {

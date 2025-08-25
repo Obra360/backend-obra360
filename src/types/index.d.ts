@@ -8,12 +8,23 @@ interface UserPayload {
   // ...cualquier otra propiedad del usuario que venga en el JWT
 }
 
-// Extiende la interfaz Request de Express
 declare global {
   namespace Express {
-    export interface Request {
-      user?: UserPayload; // El objeto 'user' que añade tu middleware de autenticación
-      role?: string;      // La propiedad 'role' que añadirá nuestro nuevo middleware
+    interface Request {
+      user?: {
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        role: string;
+        companyId: string;
+        iat?: number;
+        exp?: number;
+      };
+      companyId?: string;
+      companyFilter?: { companyId: string };
     }
   }
 }
+
+export {};

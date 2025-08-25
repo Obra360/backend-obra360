@@ -9,20 +9,23 @@ datasource db {
 }
 
 model User {
-  id              String          @id @default(uuid()) @db.Uuid
-  email           String          @unique
-  password        String
-  firstName       String
-  lastName        String
-  role            UserRole        @default(OPERARIO)
-  isActive        Boolean         @default(true)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  obras           Obra[]
-  RefreshToken    RefreshToken[]
-  controlHorasCreadas ControlHoras[] @relation("CreatedBy")
-  certificaciones Certificacion[] 
+  id                  String          @id @default(uuid()) @db.Uuid
+  email               String          @unique
+  password            String
+  firstName           String
+  lastName            String
+  role                UserRole        @default(OPERARIO)
+  isActive            Boolean         @default(true)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  companyId           String          @db.Uuid
+  obras               Obra[]
+  RefreshToken        RefreshToken[]
+  Company             Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  certificaciones     Certificacion[]
+  controlHorasCreadas ControlHoras[]  @relation("CreatedBy")
 
+  @@index([companyId])
   @@map("User")
 }
 
@@ -44,10 +47,13 @@ model Obra {
   ciudad     String
   createdAt  DateTime     @default(now())
   userId     String       @map("userid") @db.Uuid
+  companyId  String       @db.Uuid
   articulos  Articulo[]
+  Company    Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   user       User         @relation(fields: [userId], references: [id])
   materiales materiales[]
 
+  @@index([companyId])
   @@map("Obra")
 }
 
@@ -97,14 +103,14 @@ model Salario {
 }
 
 model PersonaControlHoras {
-  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  nombre        String         @db.VarChar(100)
-  apellido      String         @db.VarChar(100)
-  dni           String         @unique @db.VarChar(20)
-  activo        Boolean        @default(true)
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @default(now()) @updatedAt @map("updated_at")
-  controlHoras  ControlHoras[]
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nombre       String         @db.VarChar(100)
+  apellido     String         @db.VarChar(100)
+  dni          String         @unique @db.VarChar(20)
+  activo       Boolean        @default(true)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @default(now()) @updatedAt @map("updated_at")
+  controlHoras ControlHoras[]
 
   @@map("personas_control_horas")
 }
@@ -113,16 +119,15 @@ model ControlHoras {
   id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   personaId     String              @map("persona_id") @db.Uuid
   fecha         DateTime            @db.Date
-  horaEntrada   DateTime?           @map("hora_entrada") @db.Time
-  horaSalida    DateTime?           @map("hora_salida") @db.Time
+  horaEntrada   DateTime?           @map("hora_entrada") @db.Time(6)
+  horaSalida    DateTime?           @map("hora_salida") @db.Time(6)
   horasExtra    Decimal             @default(0) @map("horas_extra") @db.Decimal(4, 2)
   observaciones String?
   createdAt     DateTime            @default(now()) @map("created_at")
   updatedAt     DateTime            @default(now()) @updatedAt @map("updated_at")
   createdBy     String?             @map("created_by") @db.Uuid
-  
+  user          User?               @relation("CreatedBy", fields: [createdBy], references: [id])
   persona       PersonaControlHoras @relation(fields: [personaId], references: [id], onDelete: Cascade)
-  user          User?               @relation("CreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
 
   @@unique([personaId, fecha], name: "unique_persona_fecha")
   @@index([fecha])
@@ -186,6 +191,17 @@ model materiales {
   @@index([codigo_interno], map: "idx_materiales_codigo_interno")
   @@index([created_at], map: "idx_materiales_created_at")
   @@index([obra_id], map: "idx_materiales_obra_id")
+}
+
+model Company {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+  Obra        Obra[]
+  User        User[]
 }
 
 enum UserRole {
