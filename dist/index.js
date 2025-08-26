@@ -11,18 +11,20 @@ import { compare } from "bcryptjs";
 import { authenticate } from "./middlewares/auth.js";
 console.log("🟢 authenticate cargado");
 import userRouter from "./routes/user.routes.js";
-import obrasRouter from "./routes/obras.js";
+import obrasRouter from "./routes/obras.routes.js";
 import articulosRouter from './routes/articulos.routes.js';
 import salariosRouter from './routes/salarios.routes.js';
 import certificacionRouter from './routes/certificacion.routes.js';
 import movimientosRouter from './routes/movimientos.routes.js';
-import asistenciaRouter from './routes/asistencia.routes.js';
+import controlHorasRouter from './routes/control-horas.routes.js';
 import materialesRouter from './routes/materiales.routes.js';
+import { requireCompanyAccess } from "./middlewares/companyAuth.js";
+console.log("🟢 requireCompanyAccess cargado");
 const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const allowedOrigins = [
-    "https://frontend-obra360.onrender.com",
+    "https://frontend-obra360.vercel.app/",
     "http://localhost:3000",
     "http://127.0.0.1:5500",
     "http://localhost:8080"
@@ -71,16 +73,20 @@ app.get("/*.html", (req, res) => {
 app.post("/users/login", async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
-            where: { email: req.body.email }
+            where: { email: req.body.email },
+            include: {
+                Company: true
+            }
         });
         if (!user)
             throw new Error("User not found");
         const isPasswordCorrect = await compare(req.body.password, user.password);
         if (!isPasswordCorrect)
             throw new Error("Incorrect password");
-        const { password: _, ...userWithoutPassword } = user;
+        const { password: _, Company, ...userWithoutPassword } = user;
         res.json({
             ...userWithoutPassword,
+            company: Company,
             token: generateJwt(user),
             message: "Login exitoso"
         });
@@ -98,15 +104,21 @@ app.get("/auth/verify", async (req, res) => {
         }
         const decoded = verify(token, process.env.JWT_SECRET);
         const user = await prisma.user.findUnique({
-            where: { id: decoded.id }
+            where: { id: decoded.id },
+            include: {
+                Company: true
+            }
         });
         if (!user) {
             return res.status(401).json({ error: "User not found" });
         }
-        const { password: _, ...userWithoutPassword } = user;
+        const { password: _, Company, ...userWithoutPassword } = user;
         res.json({
             valid: true,
-            user: userWithoutPassword
+            user: {
+                ...userWithoutPassword,
+                company: Company
+            }
         });
     }
     catch (error) {
@@ -128,14 +140,18 @@ app.get("/user", authenticate, async (req, res, next) => {
         if (!user)
             return res.sendStatus(401);
         const currentUser = await prisma.user.findUnique({
-            where: { id: user.id }
+            where: { id: user.id },
+            include: {
+                Company: true
+            }
         });
         if (!currentUser) {
             return res.status(404).json({ error: "Usuario no encontrado" });
         }
-        const { password: _, ...userWithoutPassword } = currentUser;
+        const { password: _, Company, ...userWithoutPassword } = currentUser;
         res.json({
             ...userWithoutPassword,
+            company: Company,
             token: generateJwt(currentUser)
         });
     }
@@ -145,12 +161,12 @@ app.get("/user", authenticate, async (req, res, next) => {
     }
 });
 app.use("/api/users", authenticate, userRouter);
-app.use('/api/obras', authenticate, obrasRouter);
+app.use('/api/obras', authenticate, requireCompanyAccess, obrasRouter);
 app.use('/api/articulos', authenticate, articulosRouter);
 app.use('/api/certificaciones', authenticate, certificacionRouter);
 app.use('/api/movimientos', authenticate, movimientosRouter);
 app.use('/api/salarios', authenticate, salariosRouter);
-app.use('/api/asistencia', authenticate, asistenciaRouter);
+app.use('/api/control-horas', authenticate, controlHorasRouter);
 app.use('/api/materiales', authenticate, materialesRouter);
 function generateJwt(user) {
     return sign({
@@ -158,7 +174,8 @@ function generateJwt(user) {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role
+        role: user.role,
+        companyId: user.companyId
     }, process.env.JWT_SECRET, {
         expiresIn: "1d"
     });

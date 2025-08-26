@@ -4,16 +4,6 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 const router = Router();
 
-// Tipo para request con usuario autenticado
-interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-  }
-}
 
 // ==================== PERSONAS ====================
 
@@ -168,7 +158,7 @@ router.get('/registros', async (req: Request, res: Response) => {
 });
 
 // Registrar entrada/salida
-router.post('/marcar', async (req: AuthRequest, res: Response) => {
+router.post('/marcar', async (req: Request, res: Response) => {
   const { personaId, tipo, fecha, hora, esHoraExtra } = req.body;
   const userId = req.user?.id; // Usuario autenticado
   

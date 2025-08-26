@@ -7,15 +7,6 @@ const prisma = new PrismaClient();
 
 // ==================== INTERFACES ====================
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-  };
-}
 
 interface CreateCertificacionData {
   obra: string;
@@ -40,7 +31,7 @@ interface UpdateCertificacionData {
 // ==================== RUTAS ====================
 
 // GET /api/certificaciones - Obtener todas las certificaciones
-router.get('/', authenticate, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.get('/', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const { obra, estado, fecha, mes, ano } = req.query;
     const currentUser = req.user;
@@ -113,7 +104,7 @@ router.get('/', authenticate, async (req: AuthenticatedRequest, res: Response): 
 });
 
 // POST /api/certificaciones - Crear nueva certificación
-router.post('/', authenticate, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.post('/', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const { obra, tipoCertificacion, fecha, items }: CreateCertificacionData = req.body;
     const currentUser = req.user;
@@ -191,7 +182,7 @@ router.post('/', authenticate, async (req: AuthenticatedRequest, res: Response):
 });
 
 // GET /api/certificaciones/:id - Obtener certificación específica
-router.get('/:id', authenticate, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.get('/:id', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const currentUser = req.user;
@@ -255,7 +246,7 @@ router.get('/:id', authenticate, async (req: AuthenticatedRequest, res: Response
 });
 
 // PUT /api/certificaciones/:id - Actualizar certificación
-router.put('/:id', authenticate, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.put('/:id', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const updateData: UpdateCertificacionData = req.body;
@@ -313,7 +304,7 @@ router.put('/:id', authenticate, async (req: AuthenticatedRequest, res: Response
 });
 
 // DELETE /api/certificaciones/:id - Eliminar certificación
-router.delete('/:id', authenticate, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.delete('/:id', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const currentUser = req.user;
@@ -345,7 +336,7 @@ router.delete('/:id', authenticate, async (req: AuthenticatedRequest, res: Respo
 });
 
 // GET /api/certificaciones/stats/resumen - Obtener estadísticas
-router.get('/stats/resumen', authenticate, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.get('/stats/resumen', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const currentUser = req.user;
     const whereClause = currentUser && currentUser.role === 'OPERARIO' ? { createdBy: currentUser.id } : {};

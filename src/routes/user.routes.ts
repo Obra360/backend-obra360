@@ -35,7 +35,8 @@ router.get("/", authenticate, async (req, res) => {
   }
 });
 
-// Crear nuevo usuario (actualizado)
+// crear nuevo usuario
+
 router.post("/", authenticate, async (req, res) => {
   const { firstName, lastName, email, password, role } = req.body;
   const currentUser = (req as any).user;
@@ -66,6 +67,7 @@ router.post("/", authenticate, async (req, res) => {
         email,
         password: hashedPassword,
         role: userRole,
+        companyId: currentUser.companyId  // Add this line - auto-assign creator's company
       },
     });
 
@@ -79,7 +81,6 @@ router.post("/", authenticate, async (req, res) => {
     res.status(500).json({ error: "Error al crear usuario" });
   }
 });
-
 // Actualizar usuario (NUEVO)
 router.put("/:id", authenticate, async (req, res) => {
   const { id } = req.params;
