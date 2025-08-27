@@ -1,18 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 
-// Extender Request para incluir user tipado
-declare global {
-  namespace Express {
-    interface Request {
-      User?: {
-        id: string;
-        role: string;
-      };
-    }
-  }
-}
-
 const router = Router();
 const prisma = new PrismaClient();
 

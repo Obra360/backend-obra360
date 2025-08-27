@@ -330,7 +330,7 @@ router.delete('/:id', authenticate, async (req: Request, res: Response): Promise
     res.json({ message: 'Certificación eliminada correctamente' });
 
   } catch (error) {
-    console.error('❌ Error eliminando certificación:', error);
+    console.error('Error eliminando certificación:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
