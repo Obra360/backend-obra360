@@ -192,7 +192,7 @@ app.use('/api/certificaciones', authenticate, certificacionRouter);
 app.use('/api/movimientos', authenticate, movimientosRouter);
 app.use('/api/salarios', authenticate, salariosRouter);
 app.use('/api/control-horas', authenticate, requireCompanyAccess, controlHorasRouter);
-app.use('/api/materiales', authenticate, materialesRouter);
+app.use('/api/materiales', authenticate, requireCompanyAccess, materialesRouter);
 
 // ==================== FUNCIONES AUXILIARES ====================
 

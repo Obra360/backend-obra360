@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from "express";  // Add NextFunction
 import { PrismaClient } from '@prisma/client';
 
 const router = Router();
@@ -18,10 +18,56 @@ interface UpdateObraRequest {
   ciudad?: string;
 }
 
+// ==================== FUNCIONES DE UTILIDAD ====================
+
+function validateObraData(data: CreateObraRequest): string[] {
+  const errors: string[] = [];
+  
+  if (!data.empresa || !data.empresa.trim()) {
+    errors.push('El nombre de la empresa es requerido');
+  }
+  
+  if (!data.tipo) {
+    errors.push('El tipo de obra es requerido');
+  } else {
+    const tiposValidos = ['Obra privada', 'Obra pública'];
+    if (!tiposValidos.includes(data.tipo)) {
+      errors.push('Tipo de obra inválido. Debe ser "Obra privada" o "Obra pública"');
+    }
+  }
+  
+  if (!data.ciudad || !data.ciudad.trim()) {
+    errors.push('La ciudad es requerida');
+  }
+  
+  return errors;
+}
+
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+export default router;
+
+const requireCreateEditAccess = (req: Request, res: Response, next: NextFunction): void => {
+  const userRole = req.user?.role;
+  
+  if (userRole === 'OPERARIO') {
+    res.status(403).json({ 
+      error: 'Acceso denegado',
+      message: 'Los operarios no pueden crear o modificar obras' 
+    });
+    return;
+  }
+  
+  next();
+};
+
 // ==================== RUTAS DE OBRAS ====================
 
 // POST /api/obras - Crear nueva obra
-router.post('/', async (req: Request, res: Response): Promise<void> => {
+router.post('/', requireCreateEditAccess, async (req: Request, res: Response): Promise<void> => {
   try {
     const { empresa, tipo, ciudad }: CreateObraRequest = req.body;
     
@@ -75,13 +121,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     let whereClause: any = {
       companyId: req.companyId
     };
-    
-    // Additional role-based filtering within the company
-    if (userRole === 'OPERARIO') {
-      // OPERARIO only sees their own obras
-      whereClause.userId = req.user!.id;
-    }
-    // ADMIN and SUPERVISOR see all obras within their company
     
     const obras = await prisma.obra.findMany({
       where: whereClause,
@@ -194,7 +233,7 @@ router.get('/:id/articulos', async (req: Request, res: Response): Promise<void> 
 });
 
 // PUT /api/obras/:id - Actualizar obra
-router.put('/:id', async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', requireCreateEditAccess, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const updateData: UpdateObraRequest = req.body;
@@ -285,34 +324,3 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// ==================== FUNCIONES DE UTILIDAD ====================
-
-function validateObraData(data: CreateObraRequest): string[] {
-  const errors: string[] = [];
-  
-  if (!data.empresa || !data.empresa.trim()) {
-    errors.push('El nombre de la empresa es requerido');
-  }
-  
-  if (!data.tipo) {
-    errors.push('El tipo de obra es requerido');
-  } else {
-    const tiposValidos = ['Obra privada', 'Obra pública'];
-    if (!tiposValidos.includes(data.tipo)) {
-      errors.push('Tipo de obra inválido. Debe ser "Obra privada" o "Obra pública"');
-    }
-  }
-  
-  if (!data.ciudad || !data.ciudad.trim()) {
-    errors.push('La ciudad es requerida');
-  }
-  
-  return errors;
-}
-
-function isValidUUID(uuid: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(uuid);
-}
-
-export default router;

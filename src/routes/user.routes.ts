@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express"; 
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { authenticate, requireAdmin } from "../middlewares/auth.js";
@@ -9,27 +9,29 @@ const prisma = new PrismaClient();
 // Obtener listado de usuarios (admin y supervisor)
 router.get("/", authenticate, async (req, res) => {
   const currentUser = (req as any).user;
-  
+
   // Solo admin y supervisor pueden ver la lista
   if (currentUser.role !== "ADMIN" && currentUser.role !== "SUPERVISOR") {
-    return res.status(403).json({ error: "No tienes permisos para ver usuarios" });
+    return res
+      .status(403)
+      .json({ error: "No tienes permisos para ver usuarios" });
   }
 
   try {
-  const users = await prisma.user.findMany({
-    where: {
-      companyId: currentUser.companyId  // Add company filtering
-    },
-    select: {
-      id: true,
-      email: true,
-      firstName: true,
-      lastName: true,
-      role: true,
-      isActive: true,
-      createdAt: true,
-    },
-  });
+    const users = await prisma.user.findMany({
+      where: {
+        companyId: currentUser.companyId, // Add company filtering
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
 
     res.json(users);
   } catch (err) {
@@ -50,12 +52,30 @@ router.post("/", authenticate, async (req, res) => {
 
   let userRole = role || "OPERARIO";
 
+  // Role-based creation permissions
   if (currentUser.role !== "ADMIN") {
     if (currentUser.role === "SUPERVISOR") {
-      if (role && role !== "OPERARIO") {
-        return res.status(403).json({ error: "Como supervisor, solo puedes crear operadores" });
+      // SUPERVISOR can create OPERARIO and SUPERVISOR (but not ADMIN)
+      if (role && !["OPERARIO", "SUPERVISOR"].includes(role)) {
+        return res.status(403).json({ 
+          error: "Como supervisor, solo puedes crear operarios y supervisores" 
+        });
       }
-      userRole = "OPERARIO";
+      // Validate supervisor limit (5 max)
+      if (role === "SUPERVISOR") {
+        const supervisorCount = await prisma.user.count({
+          where: { 
+            companyId: currentUser.companyId,
+            role: "SUPERVISOR" 
+          }
+        });
+        
+        if (supervisorCount >= 5) {
+          return res.status(400).json({ 
+            error: "Límite de supervisores alcanzado (máximo 5 por empresa)" 
+          });
+        }
+      }
     } else {
       return res.status(403).json({ error: "No tienes permisos para crear usuarios" });
     }
@@ -70,7 +90,7 @@ router.post("/", authenticate, async (req, res) => {
         email,
         password: hashedPassword,
         role: userRole,
-        companyId: currentUser.companyId  // Add this line - auto-assign creator's company
+        companyId: currentUser.companyId
       },
     });
 
@@ -84,6 +104,7 @@ router.post("/", authenticate, async (req, res) => {
     res.status(500).json({ error: "Error al crear usuario" });
   }
 });
+
 // Actualizar usuario (NUEVO)
 router.put("/:id", authenticate, async (req, res) => {
   const { id } = req.params;
@@ -102,7 +123,9 @@ router.put("/:id", authenticate, async (req, res) => {
 
     if (currentUser.role !== "ADMIN") {
       if (currentUser.role !== "SUPERVISOR" || targetUser.role !== "OPERARIO") {
-        return res.status(403).json({ error: "No tienes permisos para editar este usuario" });
+        return res
+          .status(403)
+          .json({ error: "No tienes permisos para editar este usuario" });
       }
     }
 
@@ -123,14 +146,13 @@ router.put("/:id", authenticate, async (req, res) => {
         role: true,
         isActive: true,
         createdAt: true,
-      }
+      },
     });
 
-    res.json({ 
+    res.json({
       message: "Usuario actualizado correctamente",
-      user: updatedUser 
+      user: updatedUser,
     });
-
   } catch (err) {
     console.error("Error al actualizar usuario:", err);
     res.status(500).json({ error: "Error interno del servidor" });
@@ -154,13 +176,14 @@ router.delete("/:id", authenticate, async (req, res) => {
 
     if (currentUser.role !== "ADMIN") {
       if (currentUser.role !== "SUPERVISOR" || targetUser.role !== "OPERARIO") {
-        return res.status(403).json({ error: "No tienes permisos para eliminar este usuario" });
+        return res
+          .status(403)
+          .json({ error: "No tienes permisos para eliminar este usuario" });
       }
     }
 
     await prisma.user.delete({ where: { id } });
     res.json({ message: "Usuario eliminado correctamente" });
-
   } catch (err) {
     console.error("Error al eliminar usuario:", err);
     res.status(500).json({ error: "Error interno del servidor" });
