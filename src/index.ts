@@ -185,7 +185,7 @@ app.get("/user", authenticate, async (req, res, next) => {
 });
 
 // Aplicar autenticación a todas las rutas de API
-app.use("/api/users", authenticate, userRouter);
+app.use("/api/users", authenticate, requireCompanyAccess, userRouter);
 app.use('/api/obras', authenticate, requireCompanyAccess, obrasRouter);
 app.use('/api/articulos', authenticate, articulosRouter);
 app.use('/api/certificaciones', authenticate, certificacionRouter);

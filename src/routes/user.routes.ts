@@ -16,17 +16,20 @@ router.get("/", authenticate, async (req, res) => {
   }
 
   try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-      },
-    });
+  const users = await prisma.user.findMany({
+    where: {
+      companyId: currentUser.companyId  // Add company filtering
+    },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+      isActive: true,
+      createdAt: true,
+    },
+  });
 
     res.json(users);
   } catch (err) {
