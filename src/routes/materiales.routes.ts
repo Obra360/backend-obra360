@@ -4,9 +4,7 @@ import { PrismaClient } from '@prisma/client';
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Remove the duplicate declare global block - use existing DecodedUser from auth middleware
-
-// GET - List materials
+// GET - List materials (Company-wide)
 router.get('/', async (req, res) => {
   try {
     const user = req.user;
@@ -17,16 +15,16 @@ router.get('/', async (req, res) => {
     const { obraId } = req.query;
 
     const where: any = {
-      Obra: { userId: user.id } // Changed from 'obra' to 'Obra'
+      Obra: { companyId: req.companyId }  // ✅ Filter by company, not user
     };
     
     if (obraId && typeof obraId === 'string') {
-      where.obra_id = obraId; // Use the actual column name
+      where.obra_id = obraId; 
     }
 
     const materiales = await prisma.materiales.findMany({
       where,
-      include: { Obra: true }, // Changed from 'obra' to 'Obra'
+      include: { Obra: true }, 
       orderBy: { created_at: 'desc' }
     });
 
@@ -37,7 +35,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST - Create material
+// POST - Create material (Any company obra)
 router.post('/', async (req, res) => {
   try {
     const user = req.user;
@@ -47,13 +45,16 @@ router.post('/', async (req, res) => {
 
     const { codigoInterno, nombre, unidad, cantidad, precio, obraId, remito, fechaIngreso } = req.body;
 
-    // Verify user owns the obra
+    // Verify obra belongs to user's company (not just user)
     const obra = await prisma.obra.findFirst({
-      where: { id: obraId, userId: user.id }
+      where: { 
+        id: obraId, 
+        companyId: req.companyId  // ✅ Company-based verification
+      }
     });
     
     if (!obra) {
-      return res.status(403).json({ error: 'Obra not found or unauthorized' });
+      return res.status(403).json({ error: 'Obra not found or not in your company' });
     }
 
     // Calculate precio total
@@ -71,7 +72,7 @@ router.post('/', async (req, res) => {
         remito,
         fecha_ingreso: fechaIngreso ? new Date(fechaIngreso) : new Date()
       },
-      include: { Obra: true } // Changed from 'obra' to 'Obra'
+      include: { Obra: true }
     });
 
     res.status(201).json(material);
@@ -84,7 +85,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT - Update material
+// PUT - Update material (Company-wide access)
 router.put('/:id', async (req, res) => {
   try {
     const user = req.user;
@@ -95,13 +96,16 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    // Verify user owns the material
+    // Verify material belongs to user's company
     const existingMaterial = await prisma.materiales.findFirst({
-      where: { id, Obra: { userId: user.id } } // Changed from 'obra' to 'Obra'
+      where: { 
+        id, 
+        Obra: { companyId: req.companyId }  // ✅ Company-based verification
+      }
     });
 
     if (!existingMaterial) {
-      return res.status(403).json({ error: 'Material not found or unauthorized' });
+      return res.status(403).json({ error: 'Material not found or not in your company' });
     }
 
     // Recalculate precio total if needed
@@ -112,7 +116,7 @@ router.put('/:id', async (req, res) => {
     const material = await prisma.materiales.update({
       where: { id },
       data: updateData,
-      include: { Obra: true } // Changed from 'obra' to 'Obra'
+      include: { Obra: true }
     });
 
     res.json(material);
@@ -122,7 +126,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE - Remove material
+// DELETE - Remove material (Company-wide access)
 router.delete('/:id', async (req, res) => {
   try {
     const user = req.user;
@@ -132,13 +136,16 @@ router.delete('/:id', async (req, res) => {
 
     const { id } = req.params;
 
-    // Verify user owns the material
+    // Verify material belongs to user's company
     const material = await prisma.materiales.findFirst({
-      where: { id, Obra: { userId: user.id } } // Changed from 'obra' to 'Obra'
+      where: { 
+        id, 
+        Obra: { companyId: req.companyId }  // ✅ Company-based verification
+      }
     });
 
     if (!material) {
-      return res.status(403).json({ error: 'Material not found or unauthorized' });
+      return res.status(403).json({ error: 'Material not found or not in your company' });
     }
 
     await prisma.materiales.delete({ where: { id } });
