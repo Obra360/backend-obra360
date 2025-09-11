@@ -152,7 +152,7 @@ router.get('/', async (req, res) => {
     const { obraId } = req.query;
 
     const where: any = {
-      Obra: { companyId: req.companyId }
+      companyId: req.companyId // Direct company filter
     };
     
     if (obraId && typeof obraId === 'string') {
