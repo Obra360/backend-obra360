@@ -1,7 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import multer from 'multer';
-import * as ExcelJS from 'exceljs';
+import ExcelJS from 'exceljs';
 
 const router = express.Router();
 const prisma = new PrismaClient();
