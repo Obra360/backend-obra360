@@ -1,7 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import multer from 'multer';
-import { processExcelImport } from './services/excelImportService';
+import { processExcelImport } from './services/excelImportService.js';
 
 // Configure multer for file uploads
 const upload = multer({ 
