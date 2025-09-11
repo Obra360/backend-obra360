@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 dotenv.config();
 import path from "path";
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 import { fileURLToPath } from "url";
 import pkg from "jsonwebtoken";
 const { sign, verify } = pkg;
@@ -12,12 +12,12 @@ import { authenticate } from "./middlewares/auth.js";
 console.log("🟢 authenticate cargado");
 import userRouter from "./routes/user.routes.js";
 import obrasRouter from "./routes/obras.routes.js";
-import articulosRouter from './routes/articulos.routes.js';
-import salariosRouter from './routes/salarios.routes.js';
-import certificacionRouter from './routes/certificacion.routes.js';
-import movimientosRouter from './routes/movimientos.routes.js';
-import controlHorasRouter from './routes/control-horas.routes.js';
-import materialesRouter from './routes/materiales.routes.js';
+import articulosRouter from "./routes/articulos.routes.js";
+import salariosRouter from "./routes/salarios.routes.js";
+import certificacionRouter from "./routes/certificacion.routes.js";
+import movimientosRouter from "./routes/movimientos.routes.js";
+import controlHorasRouter from "./routes/control-horas.routes.js";
+import materialesRouter from "./routes/materiales.routes.js";
 import { requireCompanyAccess } from "./middlewares/companyAuth.js";
 console.log("🟢 requireCompanyAccess cargado");
 const prisma = new PrismaClient();
@@ -27,7 +27,7 @@ const allowedOrigins = [
     "https://frontend-obra360.vercel.app/",
     "http://localhost:3000",
     "http://127.0.0.1:5500",
-    "http://localhost:8080"
+    "http://localhost:8080",
 ];
 app.use(cors({
     origin: function (origin, callback) {
@@ -39,8 +39,8 @@ app.use(cors({
         }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
 }));
 app.use(express.json());
 app.options("*", cors({
@@ -65,7 +65,7 @@ app.use(express.static(frontendPath));
 app.get("/", (req, res) => res.sendFile(path.join(frontendPath, "index.html")));
 app.get("/*.html", (req, res) => {
     const requestedFile = path.join(frontendPath, req.path);
-    res.sendFile(requestedFile, err => {
+    res.sendFile(requestedFile, (err) => {
         if (err)
             res.status(404).send("Archivo no encontrado");
     });
@@ -75,8 +75,8 @@ app.post("/users/login", async (req, res) => {
         const user = await prisma.user.findUnique({
             where: { email: req.body.email },
             include: {
-                Company: true
-            }
+                Company: true,
+            },
         });
         if (!user)
             throw new Error("User not found");
@@ -88,7 +88,7 @@ app.post("/users/login", async (req, res) => {
             ...userWithoutPassword,
             company: Company,
             token: generateJwt(user),
-            message: "Login exitoso"
+            message: "Login exitoso",
         });
     }
     catch (error) {
@@ -106,8 +106,8 @@ app.get("/auth/verify", async (req, res) => {
         const user = await prisma.user.findUnique({
             where: { id: decoded.id },
             include: {
-                Company: true
-            }
+                Company: true,
+            },
         });
         if (!user) {
             return res.status(401).json({ error: "User not found" });
@@ -117,8 +117,8 @@ app.get("/auth/verify", async (req, res) => {
             valid: true,
             user: {
                 ...userWithoutPassword,
-                company: Company
-            }
+                company: Company,
+            },
         });
     }
     catch (error) {
@@ -130,8 +130,8 @@ app.get("/health", (req, res) => {
     res.json({
         status: "ok",
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development',
-        service: 'obra360-backend'
+        environment: process.env.NODE_ENV || "development",
+        service: "obra360-backend",
     });
 });
 app.get("/user", authenticate, async (req, res, next) => {
@@ -142,8 +142,8 @@ app.get("/user", authenticate, async (req, res, next) => {
         const currentUser = await prisma.user.findUnique({
             where: { id: user.id },
             include: {
-                Company: true
-            }
+                Company: true,
+            },
         });
         if (!currentUser) {
             return res.status(404).json({ error: "Usuario no encontrado" });
@@ -152,7 +152,7 @@ app.get("/user", authenticate, async (req, res, next) => {
         res.json({
             ...userWithoutPassword,
             company: Company,
-            token: generateJwt(currentUser)
+            token: generateJwt(currentUser),
         });
     }
     catch (err) {
@@ -160,14 +160,14 @@ app.get("/user", authenticate, async (req, res, next) => {
         next(err);
     }
 });
-app.use("/api/users", authenticate, userRouter);
-app.use('/api/obras', authenticate, requireCompanyAccess, obrasRouter);
-app.use('/api/articulos', authenticate, articulosRouter);
-app.use('/api/certificaciones', authenticate, certificacionRouter);
-app.use('/api/movimientos', authenticate, movimientosRouter);
-app.use('/api/salarios', authenticate, salariosRouter);
-app.use('/api/control-horas', authenticate, controlHorasRouter);
-app.use('/api/materiales', authenticate, materialesRouter);
+app.use("/api/users", authenticate, requireCompanyAccess, userRouter);
+app.use("/api/obras", authenticate, requireCompanyAccess, obrasRouter);
+app.use("/api/articulos", authenticate, articulosRouter);
+app.use("/api/certificaciones", authenticate, certificacionRouter);
+app.use("/api/movimientos", authenticate, movimientosRouter);
+app.use("/api/salarios", authenticate, salariosRouter);
+app.use("/api/control-horas", authenticate, requireCompanyAccess, controlHorasRouter);
+app.use("/api/materiales", authenticate, requireCompanyAccess, materialesRouter);
 function generateJwt(user) {
     return sign({
         id: user.id,
@@ -175,23 +175,23 @@ function generateJwt(user) {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
-        companyId: user.companyId
+        companyId: user.companyId,
     }, process.env.JWT_SECRET, {
-        expiresIn: "1d"
+        expiresIn: "1d",
     });
 }
-app.use('*', (req, res) => {
-    if (req.originalUrl.startsWith('/api/')) {
+app.use("*", (req, res) => {
+    if (req.originalUrl.startsWith("/api/")) {
         res.status(404).json({
-            error: 'Ruta de API no encontrada',
+            error: "Ruta de API no encontrada",
             message: `La ruta ${req.method} ${req.originalUrl} no existe`,
             availableRoutes: [
-                'POST /users/login',
-                'GET /auth/verify',
-                'GET /user',
-                'GET /health',
-                'API Routes: /api/obras, /api/users, /api/articulos, /api/certificaciones, /api/asistencia, /api/materiales, etc.'
-            ]
+                "POST /users/login",
+                "GET /auth/verify",
+                "GET /user",
+                "GET /health",
+                "API Routes: /api/obras, /api/users, /api/articulos, /api/certificaciones, /api/asistencia, /api/materiales, etc.",
+            ],
         });
     }
     else {
@@ -199,32 +199,32 @@ app.use('*', (req, res) => {
     }
 });
 app.use((error, req, res, next) => {
-    console.error('Error no manejado:', error);
-    const isDevelopment = process.env.NODE_ENV === 'development';
+    console.error("Error no manejado:", error);
+    const isDevelopment = process.env.NODE_ENV === "development";
     res.status(500).json({
-        error: 'Error interno del servidor',
-        message: isDevelopment ? error.message : 'Algo salió mal',
-        ...(isDevelopment && { stack: error.stack })
+        error: "Error interno del servidor",
+        message: isDevelopment ? error.message : "Algo salió mal",
+        ...(isDevelopment && { stack: error.stack }),
     });
 });
 process.on("uncaughtException", (err) => {
     console.error("❌ Uncaught Exception:");
     console.error(err instanceof Error ? err.stack : err);
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === "production") {
         process.exit(1);
     }
 });
 process.on("unhandledRejection", (reason) => {
     console.error("❌ Unhandled Rejection:");
     console.error(reason instanceof Error ? reason.stack : reason);
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === "production") {
         process.exit(1);
     }
 });
 console.log("📦 index.ts compilado correctamente");
 app.listen(PORT, () => {
     console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
-    console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌍 Entorno: ${process.env.NODE_ENV || "development"}`);
     console.log(`🔗 Frontend Path: ${frontendPath}`);
 });
 //# sourceMappingURL=index.js.map

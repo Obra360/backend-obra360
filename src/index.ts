@@ -4,7 +4,7 @@ import cors from "cors";
 dotenv.config(); // Cargar variables de entorno desde .env
 
 import path from "path";
-import { PrismaClient, User } from '@prisma/client';
+import { PrismaClient, User } from "@prisma/client";
 import { fileURLToPath } from "url";
 import pkg from "jsonwebtoken";
 const { sign, verify } = pkg;
@@ -13,12 +13,12 @@ import { authenticate } from "./middlewares/auth.js";
 console.log("🟢 authenticate cargado");
 import userRouter from "./routes/user.routes.js";
 import obrasRouter from "./routes/obras.routes.js";
-import articulosRouter from './routes/articulos.routes.js';
-import salariosRouter from './routes/salarios.routes.js';
-import certificacionRouter from './routes/certificacion.routes.js';
-import movimientosRouter from './routes/movimientos.routes.js';
-import controlHorasRouter from './routes/control-horas.routes.js';
-import materialesRouter from './routes/materiales.routes.js';
+import articulosRouter from "./routes/articulos.routes.js";
+import salariosRouter from "./routes/salarios.routes.js";
+import certificacionRouter from "./routes/certificacion.routes.js";
+import movimientosRouter from "./routes/movimientos.routes.js";
+import controlHorasRouter from "./routes/control-horas.routes.js";
+import materialesRouter from "./routes/materiales.routes.js";
 import { requireCompanyAccess } from "./middlewares/companyAuth.js";
 console.log("🟢 requireCompanyAccess cargado");
 
@@ -30,33 +30,38 @@ const allowedOrigins = [
   "https://frontend-obra360.vercel.app/",
   "http://localhost:3000",
   "http://127.0.0.1:5500",
-  "http://localhost:8080" // Añadido para pruebas locales
+  "http://localhost:8080", // Añadido para pruebas locales
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("No permitido por CORS"));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("No permitido por CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 
 app.use(express.json());
-app.options("*", cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("No permitido por CORS"));
-    }
-  },
-  credentials: true,
-}));
+app.options(
+  "*",
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("No permitido por CORS"));
+      }
+    },
+    credentials: true,
+  }),
+);
 
 if (!process.env.JWT_SECRET) {
   console.error("❌ JWT_SECRET no definida");
@@ -73,7 +78,7 @@ app.use(express.static(frontendPath));
 app.get("/", (req, res) => res.sendFile(path.join(frontendPath, "index.html")));
 app.get("/*.html", (req, res) => {
   const requestedFile = path.join(frontendPath, req.path);
-  res.sendFile(requestedFile, err => {
+  res.sendFile(requestedFile, (err) => {
     if (err) res.status(404).send("Archivo no encontrado");
   });
 });
@@ -86,8 +91,8 @@ app.post("/users/login", async (req, res) => {
     const user = await prisma.user.findUnique({
       where: { email: req.body.email },
       include: {
-        Company: true  // Add this to get company info
-      }
+        Company: true, // Add this to get company info
+      },
     });
     if (!user) throw new Error("User not found");
     const isPasswordCorrect = await compare(req.body.password, user.password);
@@ -96,9 +101,9 @@ app.post("/users/login", async (req, res) => {
     const { password: _, Company, ...userWithoutPassword } = user;
     res.json({
       ...userWithoutPassword,
-      company: Company,  // Include company info in response
+      company: Company, // Include company info in response
       token: generateJwt(user),
-      message: "Login exitoso"
+      message: "Login exitoso",
     });
   } catch (error) {
     console.error("Error en login:", error);
@@ -120,8 +125,8 @@ app.get("/auth/verify", async (req, res) => {
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       include: {
-        Company: true  // Add this to get company info
-      }
+        Company: true, // Add this to get company info
+      },
     });
 
     if (!user) {
@@ -133,8 +138,8 @@ app.get("/auth/verify", async (req, res) => {
       valid: true,
       user: {
         ...userWithoutPassword,
-        company: Company 
-      }
+        company: Company,
+      },
     });
   } catch (error) {
     console.error("Error verificando token:", error);
@@ -147,10 +152,11 @@ app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    service: 'obra360-backend'
+    environment: process.env.NODE_ENV || "development",
+    service: "obra360-backend",
   });
 });
+
 
 // ==================== RUTAS PROTEGIDAS (CON AUTENTICACIÓN) ====================
 
@@ -164,8 +170,8 @@ app.get("/user", authenticate, async (req, res, next) => {
     const currentUser = await prisma.user.findUnique({
       where: { id: user.id },
       include: {
-        Company: true  // Add this to get company info
-      }
+        Company: true, // Add this to get company info
+      },
     });
 
     if (!currentUser) {
@@ -176,7 +182,7 @@ app.get("/user", authenticate, async (req, res, next) => {
     res.json({
       ...userWithoutPassword,
       company: Company,
-      token: generateJwt(currentUser)
+      token: generateJwt(currentUser),
     });
   } catch (err) {
     console.error("Error obteniendo usuario:", err);
@@ -186,43 +192,57 @@ app.get("/user", authenticate, async (req, res, next) => {
 
 // Aplicar autenticación a todas las rutas de API
 app.use("/api/users", authenticate, requireCompanyAccess, userRouter);
-app.use('/api/obras', authenticate, requireCompanyAccess, obrasRouter);
-app.use('/api/articulos', authenticate, articulosRouter);
-app.use('/api/certificaciones', authenticate, certificacionRouter);
-app.use('/api/movimientos', authenticate, movimientosRouter);
-app.use('/api/salarios', authenticate, salariosRouter);
-app.use('/api/control-horas', authenticate, requireCompanyAccess, controlHorasRouter);
-app.use('/api/materiales', authenticate, requireCompanyAccess, materialesRouter);
+app.use("/api/obras", authenticate, requireCompanyAccess, obrasRouter);
+app.use("/api/articulos", authenticate, articulosRouter);
+app.use("/api/certificaciones", authenticate, certificacionRouter);
+app.use("/api/movimientos", authenticate, movimientosRouter);
+app.use("/api/salarios", authenticate, salariosRouter);
+app.use(
+  "/api/control-horas",
+  authenticate,
+  requireCompanyAccess,
+  controlHorasRouter,
+);
+app.use(
+  "/api/materiales",
+  authenticate,
+  requireCompanyAccess,
+  materialesRouter,
+);
 
 // ==================== FUNCIONES AUXILIARES ====================
 
 function generateJwt(user: User): string {
-  return sign({
-    id: user.id,
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    role: user.role,
-    companyId: user.companyId
-  }, process.env.JWT_SECRET!, {
-    expiresIn: "1d"
-  });
+  return sign(
+    {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      companyId: user.companyId,
+    },
+    process.env.JWT_SECRET!,
+    {
+      expiresIn: "1d",
+    },
+  );
 }
 // ==================== MANEJO DE ERRORES ====================
 
 // Manejo de rutas no encontradas
-app.use('*', (req, res) => {
-  if (req.originalUrl.startsWith('/api/')) {
+app.use("*", (req, res) => {
+  if (req.originalUrl.startsWith("/api/")) {
     res.status(404).json({
-      error: 'Ruta de API no encontrada',
+      error: "Ruta de API no encontrada",
       message: `La ruta ${req.method} ${req.originalUrl} no existe`,
       availableRoutes: [
-        'POST /users/login',
-        'GET /auth/verify',
-        'GET /user',
-        'GET /health',
-        'API Routes: /api/obras, /api/users, /api/articulos, /api/certificaciones, /api/asistencia, /api/materiales, etc.'
-      ]
+        "POST /users/login",
+        "GET /auth/verify",
+        "GET /user",
+        "GET /health",
+        "API Routes: /api/obras, /api/users, /api/articulos, /api/certificaciones, /api/asistencia, /api/materiales, etc.",
+      ],
     });
   } else {
     res.sendFile(path.join(frontendPath, "index.html"));
@@ -230,21 +250,28 @@ app.use('*', (req, res) => {
 });
 
 // Manejo global de errores
-app.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error no manejado:', error);
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  res.status(500).json({
-    error: 'Error interno del servidor',
-    message: isDevelopment ? error.message : 'Algo salió mal',
-    ...(isDevelopment && { stack: error.stack })
-  });
-});
+app.use(
+  (
+    error: Error,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ) => {
+    console.error("Error no manejado:", error);
+    const isDevelopment = process.env.NODE_ENV === "development";
+    res.status(500).json({
+      error: "Error interno del servidor",
+      message: isDevelopment ? error.message : "Algo salió mal",
+      ...(isDevelopment && { stack: error.stack }),
+    });
+  },
+);
 
 // Manejo de excepciones no capturadas
 process.on("uncaughtException", (err) => {
   console.error("❌ Uncaught Exception:");
   console.error(err instanceof Error ? err.stack : err);
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === "production") {
     process.exit(1);
   }
 });
@@ -252,7 +279,7 @@ process.on("uncaughtException", (err) => {
 process.on("unhandledRejection", (reason) => {
   console.error("❌ Unhandled Rejection:");
   console.error(reason instanceof Error ? reason.stack : reason);
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === "production") {
     process.exit(1);
   }
 });
@@ -261,8 +288,6 @@ console.log("📦 index.ts compilado correctamente");
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
-  console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌍 Entorno: ${process.env.NODE_ENV || "development"}`);
   console.log(`🔗 Frontend Path: ${frontendPath}`);
 });
-
-

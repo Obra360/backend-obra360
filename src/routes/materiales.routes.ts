@@ -1,5 +1,21 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import multer from 'multer';
+import { processExcelImport } from './services/excelImportService';
+
+// Configure multer for file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+        file.mimetype === 'application/vnd.ms-excel') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only Excel files are allowed'));
+    }
+  }
+});
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -154,6 +170,36 @@ router.delete('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting material:', error);
     res.status(500).json({ error: 'Failed to delete material' });
+  }
+});
+
+// POST - Import materials from Excel
+router.post('/importar', upload.single('excel'), async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    if (!req.companyId) {
+      return res.status(400).json({ error: 'Company ID not found' });
+    }
+
+    const { results, summary } = await processExcelImport(req.file.buffer, req.companyId);
+
+    res.json({
+      message: 'Import completed',
+      summary,
+      results
+    });
+
+  } catch (error: any) {
+    console.error('Error importing Excel:', error);
+    res.status(500).json({ error: error.message || 'Failed to import Excel file' });
   }
 });
 
