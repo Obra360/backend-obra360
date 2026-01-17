@@ -1,19 +1,21 @@
 {
   "name": "backend-obra360",
   "version": "1.0.0",
+  "type": "module",
   "description": "Backend and API for Obra360",
-  "main": "index.js",
+  "main": "dist/index.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
+    "build": "tsc",
+    "prestart": "echo skipping prestart",
+    "start": "prisma generate && node dist/index.js",
+    "dev": "nodemon --watch src --ext ts --exec \"node --loader ts-node/esm --no-warnings\" src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "prepare": "husky",
     "setup:dev": "node scripts/setup-dev.js",
     "migrate:dev": "prisma migrate dev",
     "migrate:prod": "dotenv -e .env.production -- prisma migrate deploy",
@@ -25,27 +27,35 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^6.11.1",
+    "@prisma/client": "^6.12.0",
+    "@supabase/supabase-js": "^2.52.1",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
-    "express": "^5.1.0",
+    "drizzle-orm": "^0.44.3",
+    "express": "^4.18.2",
     "express-validator": "^7.2.1",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.0.14",
     "dotenv-cli": "^8.0.0",
+    "drizzle-kit": "^0.31.4",
     "eslint": "^9.31.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.1",
     "globals": "^16.3.0",
+    "husky": "^9.1.7",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
     "prisma": "^6.12.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   }
 }

@@ -3,8 +3,86 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String         @id @default(uuid()) @db.Uuid
+  email     String         @unique
+  password  String
+  firstName String
+  lastName  String
+  role      UserRole       @default(OPERARIO)
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  obras     Obra[]
+  tokens    RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @db.Uuid
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model Obra {
+  id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  empresa   String
+  tipo      String
+  ciudad    String
+  createdAt DateTime    @default(now())
+  userid    String      @db.Uuid
+  articulos Articulos[]
+  user      User        @relation(fields: [userid], references: [id])
+}
+
+model Articulos {
+  ID_Producto  Int           @id @default(autoincrement())
+  CodigoInterno  String   @unique
+  Nombre       String
+  Unidad       String
+  Cantidad     Int
+  ObraID       String        @db.Uuid
+  precio       Float         @default(0)
+  precio_final Float?        @default(0)
+  Obra         Obra          @relation(fields: [ObraID], references: [id])
+  movimientos  Movimientos[]
+}
+
+model Movimientos {
+  ID_transaccion          Int            @id @default(autoincrement())
+  ID_producto             Int
+  Producto                String
+  Cantidad                Int
+  Tipo_movimiento         TipoMovimiento
+  Fecha_transaccion       DateTime       @default(now())
+  Obra_destino            String?
+  Remito                  String?
+  Observacion             String?
+  Precio                  Decimal        @db.Decimal(10, 2)
+  Tipo_unidad             String
+  Precio_total_disponible Decimal        @db.Decimal(10, 2)
+  articulo                Articulos      @relation(fields: [ID_producto], references: [ID_Producto])
+
+  @@index([ID_producto])
+}
+
+model Certificacion {
+  Codigo            Int      @id @default(autoincrement())
+  Tipo_certificaion String
+  Fecha             DateTime
+  Precio            Float
+  Estado            String
+  Obra              Int
+  Cantidad          Int
+  Descripcion       String?
+  Auto_fecha        DateTime @default(now())
 }
 
 enum UserRole {
@@ -13,28 +91,8 @@ enum UserRole {
   OPERARIO
 }
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  firstName String
-  lastName  String
-  role      UserRole @default(OPERARIO)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations (to be added later)
-  // projects Project[]
-  // tasks    Task[]
-  RefreshToken RefreshToken[]
+enum TipoMovimiento {
+  ingreso
+  venta
 }
 
-model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-}
